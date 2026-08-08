@@ -1,0 +1,36 @@
+package com.cervalid.platform.academic.timeline.enums;
+
+public enum TimelineEventType {
+
+    STUDENT_REGISTERED,
+
+    PROFILE_CREATED,
+    PROFILE_UPDATED,
+
+    TRANSCRIPT_CREATED,
+    TRANSCRIPT_FINALIZED,
+    TRANSCRIPT_ISSUED,
+    TRANSCRIPT_REVOKED,
+
+    TRANSCRIPT_ITEM_ADDED,
+    TRANSCRIPT_ITEM_UPDATED,
+    TRANSCRIPT_ITEM_REMOVED,
+    //COURSE_UPDATED,
+
+    CERTIFICATE_ISSUED, // emitido
+    CERTIFICATE_REVOKED,
+
+    SKILL_EARNED, // habilidad obtenida
+    COMPETENCY_ACQUIRED, // ADQUIRIDA
+    COMPETENCY_CREATED, // para registros manuales
+    COMPETENCY_UPDATED,
+    COMPETENCY_DEACTIVATED,
+
+    ACHIEVEMENT_EARNED, //logro ganado
+    ACHIEVEMENT_DEACTIVATED,
+    ACHIEVEMENT_UPDATED,
+
+    BADGE_GRANTED, // insignia otorgada
+
+    MANUAL_EVENT
+}

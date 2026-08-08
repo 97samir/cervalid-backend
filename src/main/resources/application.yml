@@ -1,0 +1,57 @@
+#Configuración base común para todos los perfiles
+spring:
+  application:
+    name: platform
+
+  datasource:
+    url: jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+  aop:
+    proxy-target-class: true
+
+  logging:
+    level:
+      com.cervalid.platform.security: DEBUG
+      org.hibernate.SQL: ON
+      org.hibernate.orm.jdbc.bind: TRACE
+
+      org.springframework.security: DEBUG
+      org.springframework.security.web.FilterChainProxy: DEBUG
+      org.springframework.security.access: DEBUG
+
+app:
+  superadmin:
+    email: ${SUPERADMIN_EMAIL}
+    password: ${SUPERADMIN_PASSWORD}
+
+  frontend:
+    url: ${FRONTEND_URL}
+    urlReact: ${FRONTEND_URL_REACT}
+
+  certificate:
+    verification-url: /verify
+
+  jwt:
+    secret: ${JWT_SECRET}
+    expiration: 3600000 # 1 HORA
+    refresh-expiration: 604800000 # 7 DIAS
+
+sendgrid:
+  api:
+    key: ${SENDGRID_API_KEY}
+
+blockchain:
+  rpc-url: ${BLOCKCHAIN_RPC_URL}
+  private-key: ${BLOCKCHAIN_PRIVATE_KEY}
+  contract-address: ${BLOCKCHAIN_CONTRACT_ADDRESS}
+  network: ${NETWORK}
+
