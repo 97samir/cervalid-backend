@@ -35,6 +35,8 @@ public class Achievement {
     private String issuer;
     private LocalDate achievedDate;
 
+    private String academicPeriod; // debe permiteir null (campo opcional)
+
     @Enumerated(EnumType.STRING)
     private AchievementStatus status;
 }

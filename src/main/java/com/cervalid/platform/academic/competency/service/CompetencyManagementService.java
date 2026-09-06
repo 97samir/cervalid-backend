@@ -8,19 +8,12 @@ import com.cervalid.platform.academic.competency.enums.CompetencyStatus;
 import com.cervalid.platform.academic.competency.repository.CompetencyRepository;
 import com.cervalid.platform.academic.student.entity.Student;
 import com.cervalid.platform.academic.student.service.StudentQueryService;
-import com.cervalid.platform.academic.timeline.domain.TimelineMetadataBuilder;
-import com.cervalid.platform.academic.timeline.enums.TimelineEventSource;
-import com.cervalid.platform.academic.timeline.enums.TimelineEventType;
-import com.cervalid.platform.academic.timeline.enums.TimelineReferenceType;
-import com.cervalid.platform.academic.timeline.service.TimelineEventService;
 import com.cervalid.platform.security.context.SecurityContextService;
 import com.cervalid.platform.shared.identity.PublicIdGenerator;
-import com.fasterxml.jackson.databind.JsonNode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -33,8 +26,7 @@ public class CompetencyManagementService {
     private final CompetencyQueryService queryService;
     private final SecurityContextService securityContextService;
     private final PublicIdGenerator publicIdGenerator;
-    private final TimelineEventService timelineEventService;
-    private final TimelineMetadataBuilder timelineMetadataBuilder;
+    private final CompetencyTimelineService timelineService;
     private final CompetencyValidationService validationService;
 
     public Competency create(
@@ -48,6 +40,13 @@ public class CompetencyManagementService {
                 studentQueryService.getByPublicId(
                         studentPublicId);
 
+        if (!student.getInstitutionId()
+                .equals(institutionId)) {
+
+            throw new IllegalArgumentException(
+                    "Student does not belong to the current institution");
+        }
+
         validationService.validateCreate(
                 student,
                 request);
@@ -57,25 +56,21 @@ public class CompetencyManagementService {
                         .publicId(publicIdGenerator.generate())
                         .institutionId(institutionId)
                         .studentId(student.getId())
-                        .studentPublicId(student.getPublicId())
-                        .name(request.getName())
+                        .name(request.getName().trim())
                         .description(request.getDescription())
                         .level(request.getLevel())
-                        .issuer(request.getIssuer())
+                        .issuer(normalizeNullable(request.getIssuer()))
                         .acquiredDate(request.getAcquiredDate())
                         .status(CompetencyStatus.ACTIVE)
                         .source(CompetencySource.MANUAL)
                         .evidenceReference(null)
                         .evidenceType(null)
+                        .academicPeriod(normalizeNullable(request.getAcademicPeriod()))
                         .build();
 
         Competency saved = repository.save(competency);
 
-        publishTimeline(
-                saved,
-                TimelineEventType.COMPETENCY_CREATED,
-                "Competency created",
-                saved.getName());
+        timelineService.createdManually(saved);
 
         return saved;
     }
@@ -84,75 +79,49 @@ public class CompetencyManagementService {
             UUID publicId,
             UpdateCompetencyRequest request) {
 
-        Competency competency = queryService
-                .getEntityByPublicId(publicId);
+        Competency competency =
+                queryService.getEntityByPublicId(
+                        publicId);
 
         validationService.validateUpdate(
                 competency,
                 request);
 
-        competency.setName(request.getName());
+        competency.setName(request.getName().trim());
         competency.setDescription(request.getDescription());
         competency.setLevel(request.getLevel());
-        competency.setIssuer(request.getIssuer());
+        competency.setIssuer(normalizeNullable(request.getIssuer()));
         competency.setAcquiredDate(request.getAcquiredDate());
+        competency.setAcademicPeriod(normalizeNullable(request.getAcademicPeriod()));
 
         Competency saved = repository.save(competency);
-
-        publishTimeline(
-                saved,
-                TimelineEventType.COMPETENCY_UPDATED,
-                "Competency updated",
-                saved.getName());
+        timelineService.updated(saved);
 
         return saved;
     }
 
-    public void deactivate(UUID publicId) {
+    public void deactivate(
+            UUID publicId) {
 
-        Competency competency = queryService
-                .getEntityByPublicId(publicId);
+        Competency competency =
+                queryService.getEntityByPublicId(
+                        publicId);
 
-        validationService.validateDeactivate(
-                competency);
-
+        validationService.validateDeactivate(competency);
         competency.setStatus(CompetencyStatus.INACTIVE);
         repository.save(competency);
-
-        publishTimeline(
-                competency,
-                TimelineEventType.COMPETENCY_DEACTIVATED,
-                "Competency deactivated",
-                competency.getName());
+        timelineService.deactivated(competency);
     }
 
-    private void publishTimeline(
-            Competency competency,
-            TimelineEventType eventType,
-            String title,
-            String description) {
+    private String normalizeNullable(
+            String value) {
 
-        JsonNode metadata =
-                timelineMetadataBuilder.build(
-                        Map.of(
-                                "competency", competency.getName(),
-                                "level", competency.getLevel().name(),
-                                "status", competency.getStatus().name(),
-                                "issuer", competency.getIssuer(),
-                                "source", competency.getSource().name()
-                        ));
+        if (value == null ||
+                value.isBlank()) {
 
-        timelineEventService.createEvent(
-                competency.getInstitutionId(),
-                competency.getStudentId(),
-                eventType,
-                TimelineEventSource.SYSTEM,
-                title,
-                description,
-                competency.getPublicId(),
-                TimelineReferenceType.COMPETENCY,
-                metadata
-        );
+            return null;
+        }
+
+        return value.trim();
     }
-
 }

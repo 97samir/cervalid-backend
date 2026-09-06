@@ -1,7 +1,10 @@
 package com.cervalid.platform.academic.competency.dto.request;
 
 import com.cervalid.platform.academic.competency.enums.CompetencyLevel;
-import lombok.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.time.LocalDate;
 
@@ -9,12 +12,17 @@ import java.time.LocalDate;
 @Setter
 public class CreateCompetencyRequest {
 
-    //private Long studentId;
+    @NotBlank
     private String name;
+
     private String description;
+
+    @NotNull
     private CompetencyLevel level;
-    private String issuer; // quien la otorgo o certifico: Cisco,Oracle,Microsoft,AWS,Google
-    private LocalDate acquiredDate; // fecha en que fue emitida
-    //private UUID evidenceReference;
-    //private String evidenceType;
+
+    private String issuer; // por quien fue emitido
+
+    private LocalDate acquiredDate;
+
+    private String academicPeriod;
 }

@@ -22,6 +22,7 @@ public class AchievementMapper {
                 .type(achievement.getType().name())
                 .issuer(achievement.getIssuer())
                 .achievedDate(achievement.getAchievedDate())
+                .academicPeriod(achievement.getAcademicPeriod())
                 .status(achievement.getStatus().name())
                 .build();
     }

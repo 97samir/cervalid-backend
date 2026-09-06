@@ -8,6 +8,7 @@ import com.cervalid.platform.academic.timeline.service.TimelineEventService;
 import com.cervalid.platform.academic.transcript.domain.TranscriptStatusManager;
 import com.cervalid.platform.academic.transcript.dto.item.TranscriptItemDTO;
 import com.cervalid.platform.academic.transcript.dto.request.TranscriptItemRequest;
+import com.cervalid.platform.academic.transcript.dto.request.UpdateTranscriptItemRequest;
 import com.cervalid.platform.academic.transcript.entity.Transcript;
 import com.cervalid.platform.academic.transcript.entity.TranscriptItem;
 import com.cervalid.platform.academic.transcript.mapper.TranscriptItemMapper;
@@ -81,7 +82,7 @@ public class TranscriptItemManagementService {
     public TranscriptItemDTO updateItem(
             UUID transcriptPublicId,
             UUID itemPublicId,
-            TranscriptItemRequest request) {
+            UpdateTranscriptItemRequest request) {
 
         Transcript transcript =
                 transcriptService.getEntityByPublicId(
@@ -97,7 +98,7 @@ public class TranscriptItemManagementService {
                         .orElseThrow(() ->
                                 new RuntimeException(
                                         "Transcript item not found"));
-
+/*
         if (itemRepository.existsByTranscriptIdAndCourseCodeAndIdNot(
                 transcript.getId(),
                 request.getCourseCode(),
@@ -107,7 +108,8 @@ public class TranscriptItemManagementService {
                     "Course already exists in transcript");
         }
 
-        item.setCourseCode(request.getCourseCode());
+ */
+        //item.setCourseCode(request.getCourseCode());
         item.setCourseName(request.getCourseName());
         item.setCredits(request.getCredits());
         item.setGrade(request.getGrade());
@@ -177,11 +179,12 @@ public class TranscriptItemManagementService {
                 transcript.getInstitutionId(),
                 transcript.getStudentId(),
                 type,
-                TimelineEventSource.SYSTEM,
+                TimelineEventSource.INSTITUTION_ADMIN,
                 title,
                 courseCode,
                 transcript.getPublicId(),
                 TimelineReferenceType.TRANSCRIPT,
+                transcript.getAcademicPeriod(),
                 metadata
         );
     }

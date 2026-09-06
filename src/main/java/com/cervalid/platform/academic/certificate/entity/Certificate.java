@@ -8,6 +8,7 @@ import lombok.*;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -40,6 +41,12 @@ public class Certificate {
     private CertificateType type;
 
     @Column(nullable = false)
+    private String title;
+
+    @Column(nullable = false)
+    private LocalDate awardedAt; // localDate solo fecha no instancia de seg
+
+    @Column(nullable = false)
     private String certificateHash;
 
     private String transcriptHash;
@@ -48,6 +55,10 @@ public class Certificate {
     private String verificationHash;
 
     private String verificationUrl;
+
+    // no deben ser nullable = false por si no hay doc
+    private String documentHash; // hash del documento
+    private String documentUrl; // referencia externa al doc
 
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "jsonb")

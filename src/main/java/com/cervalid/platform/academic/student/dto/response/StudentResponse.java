@@ -1,5 +1,6 @@
 package com.cervalid.platform.academic.student.dto.response;
 
+import com.cervalid.platform.academic.profile.enums.AcademicProgram;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -19,6 +20,7 @@ public class StudentResponse {
     private String status;
     private LocalDate admissionDate;
     private LocalDate graduationDate;
+    private AcademicProgram program;
     //private Long institutionId;
 
     // datos de user

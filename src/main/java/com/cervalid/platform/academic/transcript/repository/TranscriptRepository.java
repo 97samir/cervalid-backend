@@ -1,6 +1,7 @@
 package com.cervalid.platform.academic.transcript.repository;
 
 import com.cervalid.platform.academic.transcript.entity.Transcript;
+import com.cervalid.platform.academic.transcript.enums.AcademicPeriodType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -21,8 +22,12 @@ public interface TranscriptRepository
     List<Transcript> findByStudentId(
             Long studentId);
 
-    boolean existsByStudentIdAndAcademicPeriod(
+    List<Transcript> findByInstitutionId(
+            Long institutionId);
+
+    boolean existsByStudentIdAndAcademicPeriodTypeAndAcademicPeriod(
             Long studentId,
+            AcademicPeriodType academicPeriodType,
             String academicPeriod);
 
     Optional<Transcript> findByPublicIdAndInstitutionId(

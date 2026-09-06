@@ -1,5 +1,6 @@
 package com.cervalid.platform.academic.certificate.snapshot;
 
+import com.cervalid.platform.academic.certificate.entity.Certificate;
 import com.cervalid.platform.academic.profile.repository.AcademicProfileRepository;
 import com.cervalid.platform.academic.profile.entity.AcademicProfile;
 import com.cervalid.platform.academic.student.entity.Student;
@@ -27,8 +28,10 @@ public class CertificateSnapshotBuilder {
     private final InstitutionUserRepository institutionUserRepository;
 
     public JsonNode build(
-            Long studentId,
-            Long institutionId) {
+            Certificate certificate) {
+
+        Long studentId = certificate.getStudentId();
+        Long institutionId = certificate.getInstitutionId();
 
         Student student =
                 studentRepository.findById(studentId)
@@ -42,13 +45,13 @@ public class CertificateSnapshotBuilder {
                         .findById(student.getInstitutionMembershipId())
                         .orElse(null);
 
-        // obtener el usuario
         User user =
                 membership != null
                         ? membership.getUser()
                         : null;
 
         String studentName = null;
+
         if (user != null) {
             studentName =
                     user.getName() + " " + user.getLastName();
@@ -70,21 +73,55 @@ public class CertificateSnapshotBuilder {
 
         Map<String, Object> snapshot =
                 Map.of(
+                        "certificate", Map.of(
+                                "publicId", certificate.getPublicId(),
+                                "certificateNumber",
+                                certificate.getCertificateNumber(),
+
+                                "type",
+                                certificate.getType(),
+
+                                "title",
+                                certificate.getTitle(),
+
+                                "awardedAt",
+                                certificate.getAwardedAt(),
+
+                                "issuedAt",
+                                certificate.getIssuedAt()
+                        ),
+
                         "student", Map.of(
-                                "publicId", student.getPublicId(),
-                                "studentCode", student.getStudentCode(),
-                                "name", studentName
+                                "publicId",
+                                student.getPublicId(),
+
+                                "studentCode",
+                                student.getStudentCode(),
+
+                                "name",
+                                studentName
                         ),
 
                         "institution", Map.of(
-                                "id", institution.getId(),
-                                "name", institution.getName()
+                                "id",
+                                institution.getId(),
+
+                                "name",
+                                institution.getName()
                         ),
 
                         "academic", Map.of(
-                                "program", profile.getProgram(),
-                                "faculty", profile.getFaculty(),
-                                "modality", profile.getModality()
+                                "program",
+                                profile.getProgram(),
+
+                                "faculty",
+                                profile.getFaculty(),
+
+                                "modality",
+                                profile.getModality(),
+
+                                "currentCycle",
+                                profile.getCurrentCycle()
                         )
                 );
 

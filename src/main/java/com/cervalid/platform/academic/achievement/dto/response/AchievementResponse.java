@@ -17,5 +17,6 @@ public class AchievementResponse {
     private String type;
     private String issuer;
     private LocalDate achievedDate;
+    private String academicPeriod;
     private String status;
 }

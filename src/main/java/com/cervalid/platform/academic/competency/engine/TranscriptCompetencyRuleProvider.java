@@ -25,7 +25,8 @@ public class TranscriptCompetencyRuleProvider {
                 .map(this::toDomain);
     }
 
-    private CompetencyRule toDomain(CompetencyRuleEntity entity) {
+    private CompetencyRule toDomain(
+            CompetencyRuleEntity entity) {
 
         return new CompetencyRule(
                 entity.getCourseCode(),

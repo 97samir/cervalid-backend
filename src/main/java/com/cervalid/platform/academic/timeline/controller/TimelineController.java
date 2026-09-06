@@ -11,8 +11,7 @@ import com.cervalid.platform.academic.timeline.service.TimelineQueryService;
 import com.cervalid.platform.academic.timeline.summary.dto.response.TimelineSummaryResponse;
 import com.cervalid.platform.academic.timeline.summary.service.TimelineSummaryService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
@@ -29,6 +28,7 @@ public class TimelineController {
     private final TimelineDetailQueryService detailQueryService;
 
     @PostMapping("/manual")
+    @PreAuthorize("hasAnyRole('INSTITUTION_ADMIN', 'INSTITUTION_SUBADMIN')")
     public TimelineEventResponse createManualEvent(
             @RequestBody CreateManualTimelineEventRequest request) {
 
@@ -38,33 +38,26 @@ public class TimelineController {
 
     @GetMapping("/student/{studentPublicId}")
     public TimelinePageResponse getTimeline(
-
             @PathVariable UUID studentPublicId,
+            @ModelAttribute TimelineFilterRequest filter,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size) {
+            @RequestParam(defaultValue = "10") int size) {
+
+        filter.setStudentPublicId(studentPublicId);
 
         return timelineQueryService.getStudentTimeline(
-                studentPublicId,
+                filter,
                 page,
                 size
         );
     }
 
     @DeleteMapping("/{publicId}")
+    @PreAuthorize("hasAnyRole('INSTITUTION_ADMIN', 'INSTITUTION_SUBADMIN')")
     public void delete(
             @PathVariable UUID publicId) {
 
         deleteService.delete(publicId);
-    }
-
-    @PostMapping("/search")
-    public Page<TimelineEventResponse> search(
-            @RequestBody TimelineFilterRequest request,
-            Pageable pageable) {
-
-        return timelineQueryService.filterTimeline(
-                request,
-                pageable);
     }
 
     @GetMapping("/{publicId}")
@@ -75,8 +68,14 @@ public class TimelineController {
     }
 
     //resumen - dashboard
-    @GetMapping("/summary")
-    public TimelineSummaryResponse summary() {
-        return timelineSummaryService.getSummary();
+    @GetMapping("/student/{studentPublicId}/summary")
+    public TimelineSummaryResponse getStudentSummary(
+            @PathVariable UUID studentPublicId) {
+
+        return timelineSummaryService.getStudentSummary(
+                studentPublicId
+        );
     }
+
+
 }

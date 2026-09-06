@@ -1,6 +1,7 @@
 package com.cervalid.platform.academic.transcript.service;
 import com.cervalid.platform.academic.transcript.dto.item.TranscriptItemDTO;
 import com.cervalid.platform.academic.transcript.dto.request.TranscriptItemRequest;
+import com.cervalid.platform.academic.transcript.dto.request.UpdateTranscriptItemRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,7 +27,7 @@ public class TranscriptItemService {
     public TranscriptItemDTO updateItem(
             UUID transcriptPublicId,
             UUID itemPublicId,
-            TranscriptItemRequest request) {
+            UpdateTranscriptItemRequest request) {
 
         return managementService.updateItem(
                 transcriptPublicId,

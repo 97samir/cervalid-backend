@@ -115,22 +115,23 @@ public class StudentService {
     private void publishStudentCreated(
             Student student) {
 
-        JsonNode metadata =
-                timelineMetadataBuilder.build(
-                        Map.of(
-                                "studentCode",
-                                student.getStudentCode()
-                        ));
+        JsonNode metadata = timelineMetadataBuilder.build(
+                Map.of(
+                        "studentCode", student.getStudentCode(),
+                        "admissionDate", student.getAdmissionDate(),
+                        "graduationDate", student.getGraduationDate()
+                ));
 
         timelineEventService.createEvent(
                 student.getInstitutionId(),
                 student.getId(),
                 TimelineEventType.STUDENT_REGISTERED,
-                TimelineEventSource.SYSTEM,
+                TimelineEventSource.INSTITUTION_ADMIN,
                 "Student registered",
                 "Student academic identity created",
                 student.getPublicId(),
                 TimelineReferenceType.STUDENT,
+                null,
                 metadata
         );
 

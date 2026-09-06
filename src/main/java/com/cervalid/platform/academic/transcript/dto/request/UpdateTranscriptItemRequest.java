@@ -3,6 +3,8 @@ package com.cervalid.platform.academic.transcript.dto.request;
 import jakarta.validation.constraints.*;
 import lombok.Data;
 
+import java.math.BigDecimal;
+
 @Data
 public class UpdateTranscriptItemRequest {
 
@@ -16,5 +18,5 @@ public class UpdateTranscriptItemRequest {
     @NotNull
     @DecimalMin("0.0")
     @DecimalMax("20.0")
-    private Double grade;
+    private BigDecimal grade;
 }

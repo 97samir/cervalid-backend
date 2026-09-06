@@ -49,9 +49,7 @@ public class StudentCreationOrchestrator {
                                         "Membership not found"));
 
         CreateStudentCommand command =
-
                 CreateStudentCommand.builder()
-
                         .userId(user.getId())
                         .institutionId(institutionId)
                         .institutionMembershipId(membership.getId())
@@ -65,7 +63,8 @@ public class StudentCreationOrchestrator {
 
         return studentMapper.toResponse(
                 student,
-                user
+                user,
+                null
         );
     }
 }

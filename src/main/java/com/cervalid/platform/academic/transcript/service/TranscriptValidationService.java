@@ -1,14 +1,13 @@
 package com.cervalid.platform.academic.transcript.service;
 
-import com.cervalid.platform.academic.shared.validation.InstitutionOwnershipValidator;
 import com.cervalid.platform.academic.student.entity.Student;
-import com.cervalid.platform.academic.student.repository.StudentRepository;
 import com.cervalid.platform.academic.transcript.dto.request.CreateTranscriptRequest;
 import com.cervalid.platform.academic.transcript.entity.Transcript;
 import com.cervalid.platform.academic.transcript.entity.TranscriptItem;
 import com.cervalid.platform.academic.transcript.enums.TranscriptStatus;
 import com.cervalid.platform.academic.transcript.repository.TranscriptItemRepository;
 import com.cervalid.platform.academic.transcript.repository.TranscriptRepository;
+import com.cervalid.platform.academic.transcript.validation.AcademicPeriodValidator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -18,14 +17,17 @@ import java.util.List;
 @RequiredArgsConstructor
 public class TranscriptValidationService {
 
-    private final StudentRepository studentRepository;
     private final TranscriptRepository transcriptRepository;
     private final TranscriptItemRepository itemRepository;
-    private final InstitutionOwnershipValidator institutionOwnershipValidator;
+    private final AcademicPeriodValidator academicPeriodValidator;
 
-    public Student validate(
+    public void validate(
             Student student,
             CreateTranscriptRequest request) {
+
+        academicPeriodValidator.validate(
+                request.getAcademicPeriodType(),
+                request.getAcademicPeriod());
 
         if (request.getItems() == null ||
                 request.getItems().isEmpty()) {
@@ -34,34 +36,30 @@ public class TranscriptValidationService {
                     "Transcript must contain courses");
         }
 
-        request.getItems().forEach(item -> {
-
-            if (item.getCredits() <= 0) {
-                throw new RuntimeException(
-                        "Credits must be greater than zero");
-            }
-        });
-
-        boolean exists = transcriptRepository
-                        .existsByStudentIdAndAcademicPeriod(
+        boolean exists =
+                transcriptRepository
+                        .existsByStudentIdAndAcademicPeriodTypeAndAcademicPeriod(
                                 student.getId(),
+                                request.getAcademicPeriodType(),
                                 request.getAcademicPeriod());
 
         if (exists) {
             throw new RuntimeException(
-                    "Transcript already exists for period");
+                    "Transcript already exists for academic period");
         }
-
-        return student;
     }
 
-    public void validateCanModify(Transcript transcript) {
+    public void validateCanModify(
+            Transcript transcript) {
 
         if (transcript == null) {
-            throw new RuntimeException("Transcript not found");
+            throw new RuntimeException(
+                    "Transcript not found");
         }
 
-        if (transcript.getStatus() != TranscriptStatus.DRAFT) {
+        if (transcript.getStatus()
+                != TranscriptStatus.DRAFT) {
+
             throw new RuntimeException(
                     "Transcript cannot be modified unless it is DRAFT");
         }
@@ -70,14 +68,45 @@ public class TranscriptValidationService {
     public void validateCanIssue(
             Transcript transcript) {
 
+        if (transcript.getStatus()
+                != TranscriptStatus.FINALIZED) {
+
+            throw new RuntimeException(
+                    "Transcript must be FINALIZED before issuing");
+        }
+
         List<TranscriptItem> items =
                 itemRepository.findByTranscriptId(
                         transcript.getId());
 
         if (items.isEmpty()) {
-
             throw new RuntimeException(
                     "Transcript contains no academic records");
+        }
+    }
+
+    public void validateCanFinalize(
+            Transcript transcript) {
+
+        if (transcript == null) {
+            throw new RuntimeException(
+                    "Transcript not found");
+        }
+
+        if (transcript.getStatus()
+                != TranscriptStatus.DRAFT) {
+
+            throw new RuntimeException(
+                    "Only DRAFT transcript can be finalized");
+        }
+
+        List<TranscriptItem> items =
+                itemRepository.findByTranscriptId(
+                        transcript.getId());
+
+        if (items.isEmpty()) {
+            throw new RuntimeException(
+                    "Transcript must contain academic records");
         }
     }
 }

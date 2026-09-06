@@ -7,6 +7,7 @@ import com.cervalid.platform.academic.transcript.entity.Transcript;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -18,7 +19,11 @@ public class CertificateBuilderService {
 
     public Certificate build(
             Transcript transcript,
-            CertificateType type) {
+            CertificateType type,
+            String title,
+            LocalDate awardedAt,
+            String documentHash,
+            String documentUrl) {
 
         return Certificate.builder()
 
@@ -29,7 +34,11 @@ public class CertificateBuilderService {
                 .transcriptId(transcript.getId())
                 .transcriptHash(transcript.getTranscriptHash())
                 .type(type)
+                .title(title)
+                .awardedAt(awardedAt)
                 .status(CertificateStatus.ISSUED)
+                .documentHash(documentHash)
+                .documentUrl(documentUrl)
                 .issuedAt(LocalDateTime.now())
                 .build();
     }

@@ -1,8 +1,10 @@
 package com.cervalid.platform.academic.verification.service;
 
 import com.cervalid.platform.academic.certificate.repository.CertificateRepository;
+import com.cervalid.platform.academic.verification.dto.request.VerificationCertificateSummaryFilterRequest;
 import com.cervalid.platform.academic.verification.dto.response.VerificationCertificateSummaryResponse;
 import com.cervalid.platform.academic.verification.mapper.VerificationCertificateSummaryMapper;
+import com.cervalid.platform.academic.verification.specification.VerificationSummarySpecification;
 import com.cervalid.platform.security.context.SecurityContextService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -19,14 +21,17 @@ public class VerificationSummaryService {
     private final VerificationCertificateSummaryMapper mapper;
 
     public Page<VerificationCertificateSummaryResponse> search(
+            VerificationCertificateSummaryFilterRequest request,
             Pageable pageable) {
 
         Long institutionId =
                 securityContextService.getInstitutionId();
 
-        return certificateRepository
-
-                .findByInstitutionId(institutionId, pageable)
+        return certificateRepository.findAll(
+                VerificationSummarySpecification.filter(
+                        request, institutionId),
+                pageable
+        )
                 .map(queryService::build)
                 .map(mapper::toResponse);
     }

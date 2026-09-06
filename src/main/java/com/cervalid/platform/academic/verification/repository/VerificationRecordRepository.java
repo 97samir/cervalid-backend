@@ -16,12 +16,14 @@ public interface VerificationRecordRepository
         extends JpaRepository<VerificationRecord, Long>,
         JpaSpecificationExecutor<VerificationRecord> {
 
-    List<VerificationRecord> findByCertificateIdAndInstitutionIdOrderByVerifiedAtDesc(
+    Page<VerificationRecord> findByCertificateIdAndInstitutionIdOrderByVerifiedAtDesc(
             Long certificateId,
-            Long institutionId);
+            Long institutionId,
+            Pageable pageable);
 
-    List<VerificationRecord> findByInstitutionIdOrderByVerifiedAtDesc(
-            Long institutionId);
+    Page<VerificationRecord> findByInstitutionIdOrderByVerifiedAtDesc(
+            Long institutionId,
+            Pageable pageable);
 
     List<VerificationRecord> findByInstitutionIdAndStatus(
             Long institutionId,

@@ -19,5 +19,5 @@ public class TranscriptItemDTO {
     private BigDecimal grade;
 
     // mas adelante
-    private String term; // 2026-I
+    //private String term; // 2026-I
 }

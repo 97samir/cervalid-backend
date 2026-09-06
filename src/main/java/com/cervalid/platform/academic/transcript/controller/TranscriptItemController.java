@@ -2,7 +2,9 @@ package com.cervalid.platform.academic.transcript.controller;
 
 import com.cervalid.platform.academic.transcript.dto.item.TranscriptItemDTO;
 import com.cervalid.platform.academic.transcript.dto.request.TranscriptItemRequest;
+import com.cervalid.platform.academic.transcript.dto.request.UpdateTranscriptItemRequest;
 import com.cervalid.platform.academic.transcript.service.TranscriptItemService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -19,6 +21,7 @@ public class TranscriptItemController {
     public TranscriptItemDTO addItem(
 
             @PathVariable UUID transcriptPublicId,
+            @Valid
             @RequestBody TranscriptItemRequest request) {
 
         return transcriptItemService.addItem(
@@ -31,7 +34,8 @@ public class TranscriptItemController {
 
             @PathVariable UUID transcriptPublicId,
             @PathVariable UUID itemPublicId,
-            @RequestBody TranscriptItemRequest request) {
+            @Valid
+            @RequestBody UpdateTranscriptItemRequest request) {
 
         return transcriptItemService.updateItem(
                 transcriptPublicId,

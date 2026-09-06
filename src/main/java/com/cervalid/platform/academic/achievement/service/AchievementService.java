@@ -51,6 +51,7 @@ public class AchievementService {
             String title,
             String type,
             String status,
+            String academicPeriod,
             Pageable pageable){
 
         return queryService.list(
@@ -58,6 +59,7 @@ public class AchievementService {
                 title,
                 type,
                 status,
+                academicPeriod,
                 pageable);
     }
 

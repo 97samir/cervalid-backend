@@ -17,7 +17,6 @@ public class CompetencyResponse {
 
     private UUID publicId;
     private UUID studentPublicId;
-    //private Long institutionId;
     private String name;
     private String description;
     private CompetencyLevel level;
@@ -27,4 +26,5 @@ public class CompetencyResponse {
     private LocalDate acquiredDate;
     private UUID evidenceReference;
     private CompetencyEvidenceType evidenceType;
+    private String academicPeriod;
 }

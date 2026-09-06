@@ -1,5 +1,7 @@
 package com.cervalid.platform.academic.student.dto.request;
 
+import com.cervalid.platform.academic.profile.enums.AcademicFaculty;
+import com.cervalid.platform.academic.profile.enums.AcademicProgram;
 import lombok.Builder;
 import lombok.Data;
 
@@ -16,8 +18,8 @@ public class RegisterStudentRequest {
     private String studentCode; // STUDENT
 
     // PROFILE
-    private String program;
-    private String faculty;
+    private AcademicProgram program;
+    private AcademicFaculty faculty;
     private String modality;
     //private String advisor; // tutot
     private Integer currentCycle;

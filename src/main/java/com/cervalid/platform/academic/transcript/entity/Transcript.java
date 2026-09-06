@@ -1,5 +1,6 @@
 package com.cervalid.platform.academic.transcript.entity;
 
+import com.cervalid.platform.academic.transcript.enums.AcademicPeriodType;
 import com.cervalid.platform.academic.transcript.enums.TranscriptStatus;
 import jakarta.persistence.*;
 import lombok.*;
@@ -20,17 +21,28 @@ public class Transcript {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false, unique = true)
     private UUID publicId;
+
+    @Column(nullable = false)
     private Long studentId;
 
     @Column(nullable = false)
     private Long institutionId;
 
-    private String academicPeriod; // 2026-I
+    @Column(nullable = false)
+    private String academicPeriod;
 
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private AcademicPeriodType academicPeriodType;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private TranscriptStatus status;
 
-    private String transcriptHash; // para verificación
+    @Column
+    private String transcriptHash;
+
     private LocalDateTime issuedAt;
 }

@@ -1,12 +1,14 @@
 package com.cervalid.platform.academic.verification.mapper;
 
 import com.cervalid.platform.academic.certificate.entity.Certificate;
-import com.cervalid.platform.academic.certificate.enums.CertificateStatus;
+import com.cervalid.platform.academic.timeline.dto.view.PublicTimelineEventView;
 import com.cervalid.platform.academic.verification.dto.response.VerifyCertificateResponse;
-import com.cervalid.platform.academic.verification.dto.view.VerificationView;
+import com.cervalid.platform.academic.verification.dto.view.PublicCertificateView;
 import com.cervalid.platform.academic.verification.entity.VerificationRecord;
 import com.cervalid.platform.academic.verification.enums.VerificationLevel;
 import org.springframework.stereotype.Component;
+
+import java.util.List;
 
 @Component
 public class VerificationResponseMapper {
@@ -14,8 +16,10 @@ public class VerificationResponseMapper {
     public VerifyCertificateResponse toResponse(
             Certificate certificate,
             VerificationRecord record,
-            VerificationView view,
-            String message) {
+            PublicCertificateView view,
+            List<PublicTimelineEventView> timeline,
+            String message,
+            VerificationLevel verificationLevel) {
 
         VerifyCertificateResponse response =
                 new VerifyCertificateResponse();
@@ -23,27 +27,31 @@ public class VerificationResponseMapper {
         response.setValid(record.isValid());
         response.setVerificationStatus(record.getStatus().name());
         response.setVerificationMessage(message);
-        response.setVerificationLevel(
-                resolveLevel(certificate, record)
-        );
+        response.setVerificationLevel(verificationLevel);
+
+        response.setTimeline(timeline);
 
         if (certificate != null) {
 
-            response.setCertificateNumber(
-                    certificate.getCertificateNumber());
+            response.setCertificateNumber(certificate.getCertificateNumber());
+            response.setCertificatePublicId(certificate.getPublicId());
 
             if (certificate.getIssuedAt() != null) {
-                response.setIssuedAt(
-                        certificate.getIssuedAt().toString());
+                response.setIssuedAt(certificate.getIssuedAt().toString());
+            }
+
+            if (certificate.getAwardedAt() != null) {
+                response.setAwardedAt(certificate.getAwardedAt().toString());
             }
 
             if (certificate.getType() != null) {
-                response.setCertificateType(
-                        certificate.getType().name());
+                response.setCertificateType(certificate.getType().name());
             }
 
-            if (view != null) {
+            response.setDocumentHash(certificate.getDocumentHash());
+            response.setDocumentUrl(certificate.getDocumentUrl());
 
+            if (view != null) {
                 response.setStudentName(view.getStudentName());
                 response.setInstitutionName(view.getInstitutionName());
                 response.setProgram(view.getProgram());
@@ -56,6 +64,7 @@ public class VerificationResponseMapper {
         return response;
     }
 
+    /*
     private VerificationLevel resolveLevel(
             Certificate certificate,
             VerificationRecord record) {
@@ -82,4 +91,5 @@ public class VerificationResponseMapper {
 
         return VerificationLevel.HASH_VALIDATED;
     }
+     */
 }

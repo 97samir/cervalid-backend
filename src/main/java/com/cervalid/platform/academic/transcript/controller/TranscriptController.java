@@ -4,6 +4,7 @@ import com.cervalid.platform.academic.transcript.dto.request.CreateTranscriptReq
 import com.cervalid.platform.academic.transcript.dto.response.TranscriptDetailResponse;
 import com.cervalid.platform.academic.transcript.dto.response.TranscriptResponse;
 import com.cervalid.platform.academic.transcript.service.TranscriptService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -22,7 +23,7 @@ public class TranscriptController {
     @PostMapping("/students/{studentPublicId}")
     public TranscriptResponse create(
             @PathVariable UUID studentPublicId,
-            @RequestBody CreateTranscriptRequest request) {
+            @Valid @RequestBody CreateTranscriptRequest request) {
 
         return transcriptService.create(
                 studentPublicId,
@@ -69,9 +70,8 @@ public class TranscriptController {
     }
 
     // listado de todos los transcript
-    @GetMapping("/transcripts")
+    @GetMapping
     public List<TranscriptResponse> getAll() {
-
         return transcriptService.getAll();
     }
 

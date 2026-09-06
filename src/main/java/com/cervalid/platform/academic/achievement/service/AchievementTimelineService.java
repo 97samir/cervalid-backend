@@ -10,6 +10,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.HashMap;
 import java.util.Map;
 
 @Service
@@ -52,29 +53,40 @@ public class AchievementTimelineService {
             String title,
             String description) {
 
+        Map<String, Object> metadataValues =
+                new HashMap<>();
+
+        metadataValues.put("title", achievement.getTitle());
+        metadataValues.put("type", achievement.getType()
+                != null
+                ? achievement.getType().name()
+                : null);
+        metadataValues.put("issuer", achievement.getIssuer());
+        metadataValues.put("status", achievement.getStatus()
+                != null
+                ? achievement.getStatus().name()
+                : null);
+        metadataValues.put("achievedDate", achievement.getAchievedDate()
+                != null
+                ? achievement.getAchievedDate().toString()
+                : null);
+        metadataValues.put("academicPeriod", achievement.getAcademicPeriod());
+
         JsonNode metadata =
                 timelineMetadataBuilder.build(
-                        Map.of(
-                                "title", achievement.getTitle(),
-                                "type", achievement.getType().name(),
-                                "issuer", achievement.getIssuer(),
-                                "status", achievement.getStatus().name(),
-                                "achievedDate", achievement.getAchievedDate()
-                                        != null
-                                        ? achievement.getAchievedDate().toString()
-                                        : null
-                        )
+                        metadataValues
                 );
 
         timelineEventService.createEvent(
                 achievement.getInstitutionId(),
                 achievement.getStudentId(),
                 eventType,
-                TimelineEventSource.SYSTEM,
+                TimelineEventSource.INSTITUTION_ADMIN,
                 title,
                 description,
                 achievement.getPublicId(),
                 TimelineReferenceType.ACHIEVEMENT,
+                achievement.getAcademicPeriod(),
                 metadata
         );
     }

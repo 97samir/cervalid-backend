@@ -13,12 +13,14 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class CompetencyQueryService {
 
     private final CompetencyRepository repository;
@@ -26,7 +28,8 @@ public class CompetencyQueryService {
     private final SecurityContextService securityContextService;
     private final StudentQueryService studentQueryService;
 
-    public Competency getEntityByPublicId(UUID publicId) {
+    public Competency getEntityByPublicId(
+            UUID publicId) {
 
         Long institutionId =
                 securityContextService.getInstitutionId();
@@ -40,25 +43,48 @@ public class CompetencyQueryService {
                                 "Competency not found"));
     }
 
-    public CompetencyResponse getByPublicId(UUID publicId) {
+    public CompetencyResponse getByPublicId(
+            UUID publicId) {
+
+        Competency competency =
+                getEntityByPublicId(publicId);
+
+        Student student =
+                studentQueryService.getById(
+                        competency.getStudentId());
+
+        validateStudentInstitution(
+                student,
+                competency.getInstitutionId());
 
         return mapper.toResponse(
-                getEntityByPublicId(publicId));
+                competency,
+                student.getPublicId());
     }
 
     public List<CompetencyResponse> getByStudent(
             UUID studentPublicId) {
 
+        Long institutionId =
+                securityContextService.getInstitutionId();
+
         Student student =
                 studentQueryService.getByPublicId(
                         studentPublicId);
 
+        validateStudentInstitution(
+                student,
+                institutionId);
+
         return repository
                 .findByStudentIdAndInstitutionId(
                         student.getId(),
-                        student.getInstitutionId())
+                        institutionId)
                 .stream()
-                .map(mapper::toResponse)
+                .map(competency ->
+                        mapper.toResponse(
+                                competency,
+                                student.getPublicId()))
                 .toList();
     }
 
@@ -67,15 +93,67 @@ public class CompetencyQueryService {
             int page,
             int size) {
 
-        Long institutionId =
-                securityContextService.getInstitutionId();
+        Long institutionId = securityContextService.getInstitutionId();
+        Long studentId = null;
+        Student student = null;
+
+        if (filter.getStudentPublicId() != null) {
+
+            student =
+                    studentQueryService.getByPublicId(
+                            filter.getStudentPublicId());
+
+            validateStudentInstitution(
+                    student,
+                    institutionId);
+
+            studentId = student.getId();
+        }
+
+        final Student resolvedStudent = student;
 
         return repository.findAll(
                         CompetencySpecification.filter(
                                 filter,
-                                institutionId),
-                        PageRequest.of(page, size))
-                .map(mapper::toResponse);
+                                institutionId,
+                                studentId),
+                        PageRequest.of(
+                                page,
+                                size))
+                .map(competency -> {
+
+                    Student currentStudent =
+                            resolvedStudent;
+
+                    if (currentStudent == null ||
+                            !currentStudent.getId()
+                                    .equals(
+                                            competency.getStudentId())) {
+
+                        currentStudent =
+                                studentQueryService.getById(
+                                        competency.getStudentId());
+                    }
+
+                    validateStudentInstitution(
+                            currentStudent,
+                            institutionId);
+
+                    return mapper.toResponse(
+                            competency,
+                            currentStudent.getPublicId());
+                });
     }
 
+    private void validateStudentInstitution(
+            Student student,
+            Long institutionId) {
+
+        if (!student.getInstitutionId()
+                .equals(institutionId)) {
+
+            throw new RuntimeException(
+                    "Student does not belong to the current institution");
+        }
+    }
 }

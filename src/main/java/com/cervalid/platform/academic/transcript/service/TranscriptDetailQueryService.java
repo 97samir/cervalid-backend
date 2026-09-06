@@ -2,13 +2,13 @@ package com.cervalid.platform.academic.transcript.service;
 
 import com.cervalid.platform.academic.student.entity.Student;
 import com.cervalid.platform.academic.student.service.StudentQueryService;
+import com.cervalid.platform.academic.transcript.domain.TranscriptSummaryCalculator;
 import com.cervalid.platform.academic.transcript.dto.item.TranscriptItemDTO;
 import com.cervalid.platform.academic.transcript.dto.response.TranscriptDetailResponse;
 import com.cervalid.platform.academic.transcript.dto.response.TranscriptResponse;
 import com.cervalid.platform.academic.transcript.entity.Transcript;
 import com.cervalid.platform.academic.transcript.entity.TranscriptItem;
 import com.cervalid.platform.academic.transcript.mapper.TranscriptItemMapper;
-import com.cervalid.platform.academic.transcript.mapper.TranscriptMapper;
 import com.cervalid.platform.academic.transcript.repository.TranscriptItemRepository;
 import com.cervalid.platform.academic.transcript.repository.TranscriptRepository;
 import com.cervalid.platform.security.context.SecurityContextService;
@@ -24,20 +24,19 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class TranscriptDetailQueryService {
 
-    private final TranscriptQueryService queryService;
     private final TranscriptRepository repository;
     private final TranscriptItemRepository itemRepository;
-    private final TranscriptMapper mapper;
     private final TranscriptItemMapper itemMapper;
     private final StudentQueryService studentQueryService;
     private final SecurityContextService securityContextService;
     private final TranscriptQueryService transcriptQueryService;
+    private final TranscriptSummaryCalculator summaryCalculator;
 
     public TranscriptDetailResponse getDetail(
             UUID transcriptPublicId) {
 
         Transcript transcript =
-                queryService.getByPublicId(
+                transcriptQueryService.getByPublicId(
                         transcriptPublicId);
 
         List<TranscriptItem> items =
@@ -70,30 +69,8 @@ public class TranscriptDetailQueryService {
             Transcript transcript,
             List<TranscriptItem> items) {
 
-        int creditsEarned =
-                items.stream()
-                        .mapToInt(
-                                TranscriptItem::getCredits)
-                        .sum();
-
-        BigDecimal weightedSum =
-                items.stream()
-                        .map(item ->
-                                item.getGrade().multiply(
-                                        BigDecimal.valueOf(
-                                                item.getCredits())))
-                        .reduce(
-                                BigDecimal.ZERO,
-                                BigDecimal::add);
-
-        BigDecimal gpa =
-                creditsEarned == 0
-                        ? BigDecimal.ZERO
-                        : weightedSum.divide(
-                        BigDecimal.valueOf(
-                                creditsEarned),
-                        2,
-                        RoundingMode.HALF_UP);
+        var summary =
+                summaryCalculator.calculate(items);
 
         List<TranscriptItemDTO> itemDtos =
                 items.stream()
@@ -102,13 +79,15 @@ public class TranscriptDetailQueryService {
 
         return TranscriptDetailResponse.builder()
                 .publicId(transcript.getPublicId())
+                .academicPeriodType(transcript.getAcademicPeriodType())
                 .academicPeriod(transcript.getAcademicPeriod())
                 .status(transcript.getStatus().name())
                 .hash(transcript.getTranscriptHash())
                 .issuedAt(transcript.getIssuedAt())
-                .gpa(gpa)
-                .creditsEarned(creditsEarned)
-                .coursesCount(items.size())
+                .gpa(summary.getGpa())
+                .creditsEarned(summary.getCreditsEarned())
+                .creditsFailed(summary.getCreditsFailed())
+                .coursesCount(summary.getCoursesCount())
                 .items(itemDtos)
                 .build();
     }

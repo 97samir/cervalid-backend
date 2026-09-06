@@ -1,6 +1,7 @@
 package com.cervalid.platform.academic.transcript.domain;
 
 import com.cervalid.platform.academic.transcript.dto.item.TranscriptItemDTO;
+import com.cervalid.platform.academic.transcript.enums.AcademicPeriodType;
 import lombok.*;
 
 import java.util.List;
@@ -14,6 +15,9 @@ public class TranscriptSnapshotDTO {
 
     private UUID transcriptPublicId;
     private UUID studentPublicId;
+
+    private AcademicPeriodType academicPeriodType;
     private String academicPeriod;
+
     private List<TranscriptItemDTO> items;
 }

@@ -15,7 +15,8 @@ public class AchievementSpecification {
             Long studentId,
             String title,
             String type,
-            String status
+            String status,
+            String academicPeriod
     ) {
         return (root, query, cb) -> {
 
@@ -52,6 +53,17 @@ public class AchievementSpecification {
             if (studentId != null) {
                 predicates.add(
                         cb.equal(root.get("studentId"), studentId)
+                );
+            }
+
+            if (academicPeriod != null
+                    && !academicPeriod.isBlank()) {
+
+                predicates.add(
+                        cb.equal(
+                                root.get("academicPeriod"),
+                                academicPeriod
+                        )
                 );
             }
 

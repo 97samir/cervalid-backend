@@ -8,15 +8,11 @@ import com.cervalid.platform.academic.achievement.specification.AchievementSpeci
 import com.cervalid.platform.academic.student.entity.Student;
 import com.cervalid.platform.academic.student.repository.StudentRepository;
 import com.cervalid.platform.security.context.SecurityContextService;
-
-
 import lombok.RequiredArgsConstructor;
-
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 
 import java.util.UUID;
 
@@ -31,7 +27,7 @@ public class AchievementQueryService {
     private final AchievementMapper mapper;
 
     public AchievementResponse getByPublicId(
-            UUID publicId){
+            UUID publicId) {
 
         Long institutionId =
                 securityContextService.getInstitutionId();
@@ -40,16 +36,16 @@ public class AchievementQueryService {
                 repository.findByPublicIdAndInstitutionId(
                                 publicId,
                                 institutionId)
-
                         .orElseThrow(() ->
                                 new RuntimeException(
                                         "Achievement not found"));
 
-        Student student = studentRepository
-                .findById(achievement.getStudentId())
-                .orElseThrow(() ->
-                        new RuntimeException(
-                                "Student not found"));
+        Student student =
+                studentRepository.findById(
+                                achievement.getStudentId())
+                        .orElseThrow(() ->
+                                new RuntimeException(
+                                        "Student not found"));
 
         return mapper.toResponse(
                 achievement,
@@ -61,25 +57,25 @@ public class AchievementQueryService {
             String title,
             String type,
             String status,
-            Pageable pageable){
+            String academicPeriod,
+            Pageable pageable) {
 
         Long institutionId =
                 securityContextService.getInstitutionId();
 
         Long studentId = null;
 
-        if(studentPublicId != null){
+        if (studentPublicId != null) {
 
             Student student =
                     studentRepository.findByPublicId(
                                     studentPublicId)
-
                             .orElseThrow(() ->
                                     new RuntimeException(
                                             "Student not found"));
 
-            if(!student.getInstitutionId()
-                    .equals(institutionId)){
+            if (!student.getInstitutionId()
+                    .equals(institutionId)) {
 
                 throw new RuntimeException(
                         "Unauthorized");
@@ -94,20 +90,22 @@ public class AchievementQueryService {
                                 studentId,
                                 title,
                                 type,
-                                status),
-
-                        pageable)
-
-                .map(a -> {
+                                status,
+                                academicPeriod
+                        ),
+                        pageable
+                )
+                .map(achievement -> {
 
                     Student student =
                             studentRepository.findById(
-                                            a.getStudentId())
-
-                                    .orElseThrow();
+                                            achievement.getStudentId())
+                                    .orElseThrow(() ->
+                                            new RuntimeException(
+                                                    "Student not found"));
 
                     return mapper.toResponse(
-                            a,
+                            achievement,
                             student.getPublicId());
                 });
     }

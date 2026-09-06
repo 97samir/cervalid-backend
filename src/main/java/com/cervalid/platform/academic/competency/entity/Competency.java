@@ -23,29 +23,41 @@ public class Competency {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false, unique = true, updatable = false)
     private UUID publicId;
+
+    @Column(nullable = false)
     private Long institutionId;
+
+    @Column(nullable = false)
     private Long studentId;
-    private UUID studentPublicId;
+
+    @Column(nullable = false)
     private String name;
 
     @Column(length = 2000)
     private String description;
 
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private CompetencyLevel level;
 
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private CompetencyStatus status;
 
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private CompetencySource source;
 
-    private String issuer; // proviene de:
-    private LocalDate acquiredDate; // fecha anterior en la fue emitida
-    private UUID evidenceReference; // id
+    private String issuer;
+
+    private LocalDate acquiredDate;
+
+    private UUID evidenceReference;
 
     @Enumerated(EnumType.STRING)
-    private CompetencyEvidenceType evidenceType; // modulo: transcript etc
-    // private boolean active;
+    private CompetencyEvidenceType evidenceType;
+
+    private String academicPeriod;
 }

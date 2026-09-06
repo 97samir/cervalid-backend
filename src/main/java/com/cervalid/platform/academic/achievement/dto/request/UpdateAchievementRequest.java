@@ -13,4 +13,5 @@ public class UpdateAchievementRequest {
     private AchievementType type;
     private String issuer;
     private LocalDate achievedDate;
+    private String academicPeriod;
 }

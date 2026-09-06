@@ -2,13 +2,16 @@ package com.cervalid.platform.academic.certificate.service;
 
 import com.cervalid.platform.academic.certificate.dto.request.CertificateSearchRequest;
 import com.cervalid.platform.academic.certificate.dto.request.IssueCertificateRequest;
+import com.cervalid.platform.academic.certificate.dto.request.UpdateCertificateCredentialRequest;
 import com.cervalid.platform.academic.certificate.dto.response.CertificateDetailResponse;
+import com.cervalid.platform.academic.certificate.dto.response.CertificateDocumentResponse;
 import com.cervalid.platform.academic.certificate.dto.response.CertificateResponse;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.UUID;
 
@@ -26,10 +29,36 @@ public class CertificateService {
     }
 
     public CertificateResponse issueFromTranscript(
-            UUID transcriptPublicId) {
+            UUID transcriptPublicId,
+            IssueCertificateRequest request) {
 
         return managementService.issueFromTranscript(
-                transcriptPublicId);
+                transcriptPublicId,
+                request);
+    }
+
+    public CertificateResponse updateCredential(
+            UUID publicId,
+            UpdateCertificateCredentialRequest request) {
+
+        return managementService.updateCredential(
+                publicId,
+                request
+        );
+    }
+
+    public CertificateDocumentResponse updateDocument(
+            UUID publicId,
+            MultipartFile file,
+            String documentHash,
+            String documentUrl) {
+
+        return managementService.updateDocument(
+                publicId,
+                file,
+                documentHash,
+                documentUrl
+        );
     }
 
     public void revoke(

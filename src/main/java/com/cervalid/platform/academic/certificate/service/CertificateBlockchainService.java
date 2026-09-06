@@ -6,10 +6,12 @@ import com.cervalid.platform.blockchain.adapter.BlockchainAnchorService;
 import com.cervalid.platform.blockchain.adapter.BlockchainCertificatePayload;
 import com.cervalid.platform.blockchain.dto.BlockchainAnchorResult;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class CertificateBlockchainService {
@@ -21,12 +23,13 @@ public class CertificateBlockchainService {
             Certificate certificate) {
 
         try {
-
+            /*
             String verificationHash = verificationProofService
                     .generateProof(
                             certificate.getCertificateHash(),
                             certificate.getTranscriptHash()
                     );
+            */
 
             BlockchainCertificatePayload payload =
                     new BlockchainCertificatePayload();
@@ -35,9 +38,13 @@ public class CertificateBlockchainService {
             payload.setCertificateNumber(certificate.getCertificateNumber());
             payload.setCertificateHash(certificate.getCertificateHash());
             payload.setTranscriptHash(certificate.getTranscriptHash());
-            payload.setVerificationHash(verificationHash);
+            //payload.setVerificationHash(verificationHash);
+            payload.setVerificationHash(certificate.getVerificationHash());
             payload.setStudentId(certificate.getStudentId());
             payload.setInstitutionId(certificate.getInstitutionId());
+            payload.setTitle(certificate.getTitle());
+            payload.setAwardedAt(certificate.getAwardedAt());
+            payload.setDocumentHash(certificate.getDocumentHash());
             payload.setIssuedAt(certificate.getIssuedAt());
             payload.setNetwork("POLYGON");
 
@@ -51,8 +58,11 @@ public class CertificateBlockchainService {
 
         } catch (Exception e) {
 
-            System.out.println("Blockchain anchoring failed: "
-                    + e.getMessage());
+            log.error(
+                    "Blockchain anchoring failed for certificate {}",
+                    certificate.getPublicId(),
+                    e
+            );
         }
     }
 }

@@ -14,7 +14,7 @@ public class VerificationHistoryMapper {
 
         return VerificationHistoryResponse.builder()
                 .publicId(view.getPublicId())
-                .certificatePublicId(view.getPublicId())
+                .certificatePublicId(view.getCertificatePublicId())
                 .certificateNumber(view.getCertificateNumber())
                 .studentName(view.getStudentName())
                 .institutionName(view.getInstitutionName())

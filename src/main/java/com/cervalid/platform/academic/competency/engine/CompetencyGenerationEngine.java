@@ -5,6 +5,7 @@ import com.cervalid.platform.academic.competency.enums.CompetencyEvidenceType;
 import com.cervalid.platform.academic.competency.enums.CompetencySource;
 import com.cervalid.platform.academic.competency.enums.CompetencyStatus;
 import com.cervalid.platform.academic.competency.repository.CompetencyRepository;
+import com.cervalid.platform.academic.competency.service.CompetencyTimelineService;
 import com.cervalid.platform.academic.transcript.entity.Transcript;
 import com.cervalid.platform.academic.transcript.entity.TranscriptItem;
 import com.cervalid.platform.academic.transcript.repository.TranscriptItemRepository;
@@ -20,10 +21,15 @@ import java.util.List;
 @RequiredArgsConstructor
 public class CompetencyGenerationEngine {
 
+    private static final BigDecimal
+            APPROVAL_GRADE =
+            BigDecimal.valueOf(14);
+
     private final TranscriptItemRepository itemRepository;
     private final CompetencyRepository competencyRepository;
     private final TranscriptCompetencyRuleProvider ruleProvider;
     private final PublicIdGenerator publicIdGenerator;
+    private final CompetencyTimelineService timelineService;
 
     @Transactional
     public void generateFromTranscript(
@@ -36,7 +42,7 @@ public class CompetencyGenerationEngine {
         for (TranscriptItem item : items) {
 
             ruleProvider.findRule(
-                    transcript.getInstitutionId(),
+                            transcript.getInstitutionId(),
                             item.getCourseCode())
                     .filter(rule ->
                             shouldGenerateCompetency(
@@ -57,7 +63,8 @@ public class CompetencyGenerationEngine {
 
         boolean approved =
                 item.getGrade()
-                        .compareTo(BigDecimal.valueOf(14)) >= 0;
+                        .compareTo(
+                                APPROVAL_GRADE) >= 0;
 
         boolean exists =
                 competencyRepository
@@ -78,7 +85,6 @@ public class CompetencyGenerationEngine {
                         .publicId(publicIdGenerator.generate())
                         .institutionId(transcript.getInstitutionId())
                         .studentId(transcript.getStudentId())
-                        //.studentPublicId(transcript.getPublicId())
                         .name(rule.competencyName())
                         .description(rule.description())
                         .level(rule.level())
@@ -87,8 +93,14 @@ public class CompetencyGenerationEngine {
                         .evidenceReference(transcript.getPublicId())
                         .issuer("Cervalid Engine")
                         .status(CompetencyStatus.ACTIVE)
+                        .academicPeriod(transcript.getAcademicPeriod())
                         .build();
 
-        competencyRepository.save(competency);
+        Competency saved =
+                competencyRepository.save(
+                        competency);
+
+        timelineService.generatedFromTranscript(
+                saved);
     }
 }

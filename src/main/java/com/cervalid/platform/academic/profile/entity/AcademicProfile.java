@@ -1,5 +1,7 @@
 package com.cervalid.platform.academic.profile.entity;
 
+import com.cervalid.platform.academic.profile.enums.AcademicFaculty;
+import com.cervalid.platform.academic.profile.enums.AcademicProgram;
 import com.cervalid.platform.audit.entity.AuditableEntity;
 import jakarta.persistence.Entity;
 import jakarta.persistence.*;
@@ -26,11 +28,20 @@ public class AcademicProfile extends AuditableEntity {
     private Long studentId;
 
     private Long institutionId;
-    private String program;
-    private String faculty;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "program")
+    private AcademicProgram program;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "faculty")
+    private AcademicFaculty faculty;
+
     private String modality;
     private String curriculumVersion;
     private Integer currentCycle;
     private String advisor; // tutor
     private Boolean active;
+    private String academicPeriod;
+
 }

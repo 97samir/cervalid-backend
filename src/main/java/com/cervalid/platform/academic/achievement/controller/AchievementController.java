@@ -21,7 +21,10 @@ public class AchievementController {
 
     @PostMapping("/students/{studentPublicId}")
     public AchievementResponse create(
+            @PathVariable UUID studentPublicId,
             @RequestBody CreateAchievementRequest request) {
+
+        request.setStudentPublicId(studentPublicId);
 
         return achievementService.create(request);
     }
@@ -32,6 +35,7 @@ public class AchievementController {
             @RequestParam(required = false) String title,
             @RequestParam(required = false) String type,
             @RequestParam(required = false) String status,
+            @RequestParam(required = false) String academicPeriod,
             Pageable pageable) {
 
         return achievementService.list(
@@ -39,6 +43,7 @@ public class AchievementController {
                 title,
                 type,
                 status,
+                academicPeriod,
                 pageable);
     }
 

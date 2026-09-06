@@ -18,12 +18,21 @@ public class CompetencyValidationService {
             Student student,
             CreateCompetencyRequest request) {
 
-        if (repository.existsByStudentIdAndNameAndLevel(
-                student.getId(),
-                request.getName(),
-                request.getLevel())) {
+        validateName(request.getName());
 
-            throw new RuntimeException(
+        if (request.getLevel() == null) {
+            throw new IllegalArgumentException(
+                    "Competency level is required");
+        }
+
+        boolean exists =
+                repository.existsByStudentIdAndNameAndLevel(
+                        student.getId(),
+                        normalize(request.getName()),
+                        request.getLevel());
+
+        if (exists) {
+            throw new IllegalArgumentException(
                     "Competency already exists");
         }
     }
@@ -32,20 +41,55 @@ public class CompetencyValidationService {
             Competency competency,
             UpdateCompetencyRequest request) {
 
-        if (competency.getStatus().isInactive()) {
-            throw new RuntimeException(
-                    "Inactive competency cannot be updated");
+        validateActive(competency);
+
+        validateName(request.getName());
+
+        if (request.getLevel() == null) {
+            throw new IllegalArgumentException(
+                    "Competency level is required");
+        }
+
+        boolean exists =
+                repository
+                        .existsByStudentIdAndNameAndLevelAndIdNot(
+                                competency.getStudentId(),
+                                normalize(request.getName()),
+                                request.getLevel(),
+                                competency.getId());
+
+        if (exists) {
+            throw new IllegalArgumentException(
+                    "Another competency with the same name and level already exists");
         }
     }
 
     public void validateDeactivate(
             Competency competency) {
 
-        if (competency.getStatus().isInactive()) {
+        validateActive(competency);
+    }
 
-            throw new RuntimeException(
-                    "Competency already inactive");
+    private void validateActive(
+            Competency competency) {
+
+        if (!competency.getStatus().isActive()) {
+
+            throw new IllegalArgumentException(
+                    "Only active competency can be modified");
         }
     }
 
+    private void validateName(String name) {
+
+        if (name == null || name.isBlank()) {
+
+            throw new IllegalArgumentException(
+                    "Competency name is required");
+        }
+    }
+
+    private String normalize(String value) {
+        return value.trim();
+    }
 }

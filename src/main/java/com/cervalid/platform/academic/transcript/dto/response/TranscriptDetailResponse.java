@@ -1,6 +1,7 @@
 package com.cervalid.platform.academic.transcript.dto.response;
 
 import com.cervalid.platform.academic.transcript.dto.item.TranscriptItemDTO;
+import com.cervalid.platform.academic.transcript.enums.AcademicPeriodType;
 import lombok.*;
 
 import java.math.BigDecimal;
@@ -15,7 +16,10 @@ import java.util.UUID;
 public class TranscriptDetailResponse {
 
     private UUID publicId;
+
+    private AcademicPeriodType academicPeriodType;
     private String academicPeriod;
+
     private String status;
     private String hash;
     private BigDecimal gpa;

@@ -1,7 +1,5 @@
 package com.cervalid.platform.academic.transcript.mapper;
 
-import com.cervalid.platform.academic.certificate.entity.Certificate;
-import com.cervalid.platform.academic.certificate.repository.CertificateRepository;
 import com.cervalid.platform.academic.transcript.domain.TranscriptSummaryCalculator;
 import com.cervalid.platform.academic.transcript.dto.response.TranscriptResponse;
 import com.cervalid.platform.academic.transcript.entity.Transcript;
@@ -33,6 +31,7 @@ public class TranscriptMapper {
         return TranscriptResponse.builder()
 
                 .publicId(transcript.getPublicId())
+                .academicPeriodType(transcript.getAcademicPeriodType())
                 .academicPeriod(transcript.getAcademicPeriod())
                 .status(transcript.getStatus().name())
                 .hash(transcript.getTranscriptHash())
@@ -41,6 +40,7 @@ public class TranscriptMapper {
 
                 .coursesCount(summary.getCoursesCount())
                 .creditsEarned(summary.getCreditsEarned())
+                .creditsFailed(summary.getCreditsFailed())
                 .gpa(summary.getGpa())
 
                 .build();

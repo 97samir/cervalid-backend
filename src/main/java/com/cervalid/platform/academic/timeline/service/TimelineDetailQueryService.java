@@ -31,6 +31,12 @@ public class TimelineDetailQueryService {
         Long institutionId =
                 securityContextService.getInstitutionId();
 
+        if (institutionId == null) {
+            throw new IllegalStateException(
+                    "Institution context is required"
+            );
+        }
+
         TimelineEvent event =
                 repository.findByPublicIdAndDeletedFalse(publicId)
                         .orElseThrow(() ->
@@ -38,7 +44,6 @@ public class TimelineDetailQueryService {
                                         "Timeline event not found"));
 
         if (!event.getInstitutionId().equals(institutionId)) {
-
             throw new RuntimeException(
                     "Timeline event does not belong to institution");
         }

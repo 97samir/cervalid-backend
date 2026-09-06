@@ -1,5 +1,7 @@
 package com.cervalid.platform.academic.student.service;
 
+import com.cervalid.platform.academic.profile.entity.AcademicProfile;
+import com.cervalid.platform.academic.profile.repository.AcademicProfileRepository;
 import com.cervalid.platform.academic.student.dto.request.UpdateStudentRequest;
 import com.cervalid.platform.academic.student.dto.response.StudentResponse;
 import com.cervalid.platform.academic.student.entity.Student;
@@ -21,6 +23,7 @@ public class StudentManagementService {
 
     private final StudentRepository studentRepository;
     private final UserRepository userRepository;
+    private final AcademicProfileRepository profileRepository;
     private final StudentMapper mapper;
 
     public StudentResponse update(
@@ -49,7 +52,12 @@ public class StudentManagementService {
                 .orElseThrow(() ->
                         new RuntimeException("User not found"));
 
-        return mapper.toResponse(saved, user);
+        AcademicProfile profile =
+                profileRepository
+                        .findByStudentId(saved.getId())
+                        .orElse(null);
+
+        return mapper.toResponse(saved, user, profile);
     }
 
     public void deactivate(UUID publicId) {

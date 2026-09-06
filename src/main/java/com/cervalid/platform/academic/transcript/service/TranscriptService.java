@@ -4,7 +4,6 @@ import com.cervalid.platform.academic.transcript.dto.request.CreateTranscriptReq
 import com.cervalid.platform.academic.transcript.dto.response.TranscriptDetailResponse;
 import com.cervalid.platform.academic.transcript.dto.response.TranscriptResponse;
 import com.cervalid.platform.academic.transcript.entity.Transcript;
-import com.cervalid.platform.academic.transcript.mapper.TranscriptMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -18,8 +17,6 @@ public class TranscriptService {
     private final TranscriptManagementService managementService;
     private final TranscriptDetailQueryService detailQueryService;
     private final TranscriptSearchService searchService;
-    private final TranscriptQueryService queryService;
-    private final TranscriptMapper transcriptMapper;
     private final TranscriptQueryService transcriptQueryService;
 
     public TranscriptResponse create(
@@ -72,6 +69,6 @@ public class TranscriptService {
     public Transcript getEntityByPublicId(
             UUID publicId) {
 
-        return queryService.getByPublicId(publicId);
+        return transcriptQueryService.getByPublicId(publicId);
     }
 }

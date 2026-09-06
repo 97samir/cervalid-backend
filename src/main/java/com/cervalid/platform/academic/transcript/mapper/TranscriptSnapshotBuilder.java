@@ -21,6 +21,7 @@ public class TranscriptSnapshotBuilder {
 
         dto.setTranscriptPublicId(transcript.getPublicId());
         dto.setStudentPublicId(student.getPublicId());
+        dto.setAcademicPeriodType(transcript.getAcademicPeriodType());
         dto.setAcademicPeriod(transcript.getAcademicPeriod());
 
         List<TranscriptItemDTO> itemDTOs = items.stream()

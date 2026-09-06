@@ -1,7 +1,7 @@
 package com.cervalid.platform.academic.timeline.service;
 
 import com.cervalid.platform.academic.timeline.entity.TimelineEvent;
-import com.cervalid.platform.academic.timeline.enums.TimelineEventSource;
+import com.cervalid.platform.academic.timeline.enums.TimelineEventType;
 import com.cervalid.platform.academic.timeline.repository.TimelineEventRepository;
 import com.cervalid.platform.security.context.SecurityContextService;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +23,12 @@ public class TimelineDeleteService {
         Long institutionId =
                 securityContextService.getInstitutionId();
 
+        if (institutionId == null) {
+            throw new IllegalStateException(
+                    "Institution context is required"
+            );
+        }
+
         TimelineEvent event = repository
                 .findByPublicIdAndDeletedFalse(publicId)
                 .orElseThrow(() ->
@@ -30,9 +36,10 @@ public class TimelineDeleteService {
                                 "Timeline event not found"));
 
         // para borrar solo el MANUAL_EVENT
-        if (event.getSource() == TimelineEventSource.SYSTEM) {
+        if (event.getType() != TimelineEventType.MANUAL_EVENT) {
             throw new RuntimeException(
-                    "System events cannot be deleted");
+                    "Only manual timeline events can be deleted"
+            );
         }
 
         if (!event.getInstitutionId().equals(institutionId)) {
@@ -42,7 +49,6 @@ public class TimelineDeleteService {
         }
 
         event.setDeleted(true);
-
         repository.save(event);
     }
 }

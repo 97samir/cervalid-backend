@@ -13,7 +13,8 @@ public interface CertificateRepository
         extends JpaRepository<Certificate, Long>,
         JpaSpecificationExecutor<Certificate> {
 
-    Optional<Certificate> findByPublicId(UUID publicId);
+    Optional<Certificate> findByPublicId(
+            UUID publicId);
 
     Optional<Certificate> findByPublicIdAndInstitutionId(
             UUID publicId,
@@ -31,7 +32,8 @@ public interface CertificateRepository
     Optional<Certificate> findByTranscriptId(
             Long transcriptId);
 
-    boolean existsByCertificateNumber(String certificateNumber);
+    boolean existsByCertificateNumber(
+            String certificateNumber);
 
     boolean existsByTranscriptId(
             Long transcriptId);

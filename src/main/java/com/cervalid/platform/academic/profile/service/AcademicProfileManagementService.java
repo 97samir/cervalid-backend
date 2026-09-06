@@ -1,5 +1,7 @@
 package com.cervalid.platform.academic.profile.service;
 
+import com.cervalid.platform.academic.profile.domain.ProfileFactory;
+import com.cervalid.platform.academic.profile.dto.internal.CreateAcademicProfileCommand;
 import com.cervalid.platform.academic.profile.dto.request.UpdateAcademicProfileRequest;
 import com.cervalid.platform.academic.profile.dto.response.AcademicProfileResponse;
 import com.cervalid.platform.academic.profile.entity.AcademicProfile;
@@ -28,6 +30,42 @@ public class AcademicProfileManagementService {
     private final TimelineEventService timelineEventService;
     private final TimelineMetadataBuilder metadataBuilder;
     private final ProfileMapper profileMapper;
+    private final ProfileFactory profileFactory;
+
+    public AcademicProfileResponse create(
+            CreateAcademicProfileCommand command) {
+
+        AcademicProfile profile =
+                profileFactory.create(command);
+
+        AcademicProfile saved =
+                repository.save(profile);
+
+        JsonNode metadata =
+                metadataBuilder.build(
+                        Map.of(
+                                "program", saved.getProgram(),
+                                "faculty", saved.getFaculty(),
+                                "cycle", saved.getCurrentCycle(),
+                                "modality", saved.getModality()
+                                //"advisor", saved.getAdvisor()
+                        ));
+
+        timelineEventService.createEvent(
+                saved.getInstitutionId(),
+                saved.getStudentId(),
+                TimelineEventType.PROFILE_CREATED,
+                TimelineEventSource.INSTITUTION_ADMIN,
+                "Academic profile created",
+                "Academic profile created",
+                saved.getPublicId(),
+                TimelineReferenceType.PROFILE,
+                null,
+                metadata
+        );
+
+        return profileMapper.toResponse(saved);
+    }
 
     public AcademicProfileResponse update(
             UUID publicId,
@@ -41,6 +79,7 @@ public class AcademicProfileManagementService {
         profile.setModality(request.getModality());
         profile.setCurrentCycle(request.getCurrentCycle());
         profile.setAdvisor(request.getAdvisor());
+
         profile.setActive(request.getActive());
 
         AcademicProfile saved =
@@ -51,18 +90,20 @@ public class AcademicProfileManagementService {
                         Map.of(
                                 "program", saved.getProgram(),
                                 "faculty", saved.getFaculty(),
-                                "cycle", saved.getCurrentCycle()
+                                "cycle", saved.getCurrentCycle(),
+                                "modality", saved.getModality()
                         ));
 
         timelineEventService.createEvent(
                 saved.getInstitutionId(),
                 saved.getStudentId(),
                 TimelineEventType.PROFILE_UPDATED,
-                TimelineEventSource.SYSTEM,
+                TimelineEventSource.INSTITUTION_ADMIN,
                 "Academic profile updated",
                 "Academic profile updated",
                 saved.getPublicId(),
                 TimelineReferenceType.PROFILE,
+                null,
                 metadata
         );
 

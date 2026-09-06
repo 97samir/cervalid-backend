@@ -9,37 +9,35 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
-import java.util.*;
+import java.util.UUID;
 
 @Repository
 public interface CompetencyRepository
         extends JpaRepository<Competency, Long>,
         JpaSpecificationExecutor<Competency> {
 
-    Optional<Competency> findByPublicId(
-            UUID publicId);
+    Optional<Competency> findByPublicIdAndInstitutionId(
+            UUID publicId,
+            Long institutionId);
 
-    List<Competency> findByStudentId(
-            Long studentId);
+    List<Competency> findByStudentIdAndInstitutionId(
+            Long studentId,
+            Long institutionId);
 
     boolean existsByStudentIdAndNameAndLevel(
             Long studentId,
             String name,
-            CompetencyLevel level
-    );
+            CompetencyLevel level);
 
-    Optional<Competency> findByPublicIdAndInstitutionId(
-            UUID publicId,
-            Long institutionId
-    );
-
-    List<Competency> findByStudentIdAndInstitutionId(
+    boolean existsByStudentIdAndNameAndLevelAndIdNot(
             Long studentId,
-            Long institutionId
-    );
+            String name,
+            CompetencyLevel level,
+            Long id);
 
     Page<Competency> findAll(
-            Specification<Competency> spec,
+            Specification<Competency> specification,
             Pageable pageable);
 }

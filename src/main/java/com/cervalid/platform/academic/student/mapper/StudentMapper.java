@@ -1,5 +1,6 @@
 package com.cervalid.platform.academic.student.mapper;
 
+import com.cervalid.platform.academic.profile.entity.AcademicProfile;
 import com.cervalid.platform.academic.student.dto.response.StudentDetailResponse;
 import com.cervalid.platform.academic.student.dto.response.StudentResponse;
 import com.cervalid.platform.academic.student.entity.Student;
@@ -11,7 +12,8 @@ public class StudentMapper {
 
     public StudentResponse toResponse(
             Student student,
-            User user) {
+            User user,
+            AcademicProfile profile) {
 
         StudentResponse response = new StudentResponse();
 
@@ -20,6 +22,10 @@ public class StudentMapper {
         response.setStatus(student.getStatus().name());
         response.setAdmissionDate(student.getAdmissionDate());
         response.setGraduationDate(student.getGraduationDate());
+
+        // perfil academico
+        response.setProgram(profile != null ?
+                profile.getProgram() : null);
 
         response.setName(user.getName());
         response.setLastName(user.getLastName());

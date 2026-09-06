@@ -8,29 +8,24 @@ import com.cervalid.platform.academic.timeline.enums.TimelineEventSource;
 import com.cervalid.platform.academic.timeline.enums.TimelineEventType;
 import com.cervalid.platform.academic.timeline.enums.TimelineReferenceType;
 import com.cervalid.platform.academic.timeline.service.TimelineEventService;
+import com.cervalid.platform.academic.transcript.domain.TranscriptHashService;
 import com.cervalid.platform.academic.transcript.domain.TranscriptSnapshotDTO;
 import com.cervalid.platform.academic.transcript.domain.TranscriptSnapshotService;
 import com.cervalid.platform.academic.transcript.domain.TranscriptStatusManager;
 import com.cervalid.platform.academic.transcript.dto.request.CreateTranscriptRequest;
 import com.cervalid.platform.academic.transcript.entity.Transcript;
 import com.cervalid.platform.academic.transcript.entity.TranscriptItem;
-import com.cervalid.platform.academic.transcript.entity.TranscriptSnapshot;
 import com.cervalid.platform.academic.transcript.enums.TranscriptStatus;
-import com.cervalid.platform.academic.transcript.mapper.TranscriptMapper;
 import com.cervalid.platform.academic.transcript.mapper.TranscriptSnapshotBuilder;
 import com.cervalid.platform.academic.transcript.repository.TranscriptItemRepository;
 import com.cervalid.platform.academic.transcript.repository.TranscriptRepository;
-import com.cervalid.platform.academic.transcript.repository.TranscriptSnapshotRepository;
 import com.cervalid.platform.security.context.SecurityContextService;
-import com.cervalid.platform.shared.hashing.HashService;
 import com.cervalid.platform.shared.identity.PublicIdGenerator;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -47,15 +42,21 @@ public class TranscriptManagementService {
     private final TranscriptValidationService validationService;
     private final SecurityContextService securityContextService;
     private final PublicIdGenerator publicIdGenerator;
-    private final HashService hashService;
+
+    private final TranscriptHashService transcriptHashService;
+
     private final TranscriptSnapshotBuilder snapshotBuilder;
-    private final TimelineEventService timelineEventService;
-    private final TimelineMetadataBuilder timelineMetadataBuilder;
-    private final CompetencyGenerationEngine competencyGenerationEngine;
-    private final TranscriptQueryService queryService;
-    private final TranscriptStatusManager statusManager;
     private final TranscriptSnapshotService transcriptSnapshotService;
 
+    private final TimelineEventService timelineEventService;
+    private final TimelineMetadataBuilder timelineMetadataBuilder;
+
+    private final CompetencyGenerationEngine competencyGenerationEngine;
+
+    private final TranscriptQueryService queryService;
+    private final TranscriptStatusManager statusManager;
+
+    // CREAR TRANSCRIPT
     public Transcript create(
             UUID studentPublicId,
             CreateTranscriptRequest request) {
@@ -65,17 +66,20 @@ public class TranscriptManagementService {
 
         Student student =
                 studentQueryService.getByPublicId(
-                        studentPublicId);
+                        studentPublicId
+                );
 
         validationService.validate(
                 student,
-                request);
+                request
+        );
 
         Transcript transcript =
                 Transcript.builder()
                         .publicId(publicIdGenerator.generate())
                         .studentId(student.getId())
                         .institutionId(institutionId)
+                        .academicPeriodType(request.getAcademicPeriodType())
                         .academicPeriod(request.getAcademicPeriod())
                         .status(TranscriptStatus.DRAFT)
                         .build();
@@ -86,72 +90,90 @@ public class TranscriptManagementService {
         List<TranscriptItem> items =
                 request.getItems()
                         .stream()
-                        .map(i -> TranscriptItem.builder()
-                                .publicId(publicIdGenerator.generate())
-                                .transcriptId(saved.getId())
-                                .courseCode(i.getCourseCode())
-                                .courseName(i.getCourseName())
-                                .credits(i.getCredits())
-                                .grade(i.getGrade())
-                                .build()
+                        .map(i ->
+                                TranscriptItem.builder()
+                                        .publicId(publicIdGenerator.generate())
+                                        .transcriptId(saved.getId())
+                                        .courseCode(i.getCourseCode())
+                                        .courseName(i.getCourseName())
+                                        .credits(i.getCredits())
+                                        .grade(i.getGrade())
+                                        .build()
                         )
                         .toList();
 
         itemRepository.saveAll(items);
 
-        JsonNode metadata =
-                timelineMetadataBuilder.build(
-                        Map.of(
-                                "period",
-                                saved.getAcademicPeriod(),
-                                "courses",
-                                items.size()
-                        ));
+        System.out.println("CREATED TRANSCRIPT PERIOD: " + transcript.getAcademicPeriod());
+        System.out.println("TRANSCRIPT ID: " + transcript.getPublicId());
+        // TIMELINE
+        JsonNode metadata = timelineMetadataBuilder.build(
+                Map.of(
+                        "period", saved.getAcademicPeriod(),
+                        "courses", items.size()
+                        )
+                );
 
         timelineEventService.createEvent(
                 institutionId,
                 student.getId(),
                 TimelineEventType.TRANSCRIPT_CREATED,
-                TimelineEventSource.SYSTEM,
+                TimelineEventSource.INSTITUTION_ADMIN,
                 "Transcript generated",
                 "Academic transcript created",
                 saved.getPublicId(),
                 TimelineReferenceType.TRANSCRIPT,
+                saved.getAcademicPeriod(),
                 metadata
         );
 
-        TranscriptSnapshotDTO snapshot =
-                snapshotBuilder.build(saved, student, items);
-
-        saved.setTranscriptHash(
-                hashService.sha256(snapshot));
-
-        return transcriptRepository.save(saved);
+        return saved;
     }
 
+    // FINALIZAR TRANSCRIPT
     public void finalizeTranscript(
             UUID transcriptPublicId) {
 
         Transcript transcript =
                 queryService.getByPublicId(
-                        transcriptPublicId);
+                        transcriptPublicId
+                );
 
         Student student =
                 studentQueryService.getById(
-                        transcript.getStudentId());
-
-        statusManager.finalizeTranscript(transcript);
-        competencyGenerationEngine.generateFromTranscript(transcript);
+                        transcript.getStudentId()
+                );
 
         List<TranscriptItem> items =
                 itemRepository.findByTranscriptId(
-                        transcript.getId());
+                        transcript.getId()
+                );
 
+        // GENERACIÓN ÚNICA DEL HASH
+        String hash =
+                transcriptHashService.generateHash(
+                        transcript,
+                        items
+                );
+
+        // TRANSICIÓN DE ESTADO
+        statusManager.finalizeTranscript(
+                transcript,
+                hash
+        );
+
+        // GENERACIÓN DE COMPETENCIAS
+        competencyGenerationEngine.generateFromTranscript(
+                transcript
+        );
+
+        // SNAPSHOT
         TranscriptSnapshotDTO snapshot =
                 snapshotBuilder.build(
                         transcript,
                         student,
-                        items);
+                        items
+                );
 
         transcriptSnapshotService.saveSnapshot(
                 transcript.getId(),
@@ -159,65 +181,74 @@ public class TranscriptManagementService {
                 transcript.getTranscriptHash()
         );
 
-        transcriptRepository.save(
-                transcript);
+        transcriptRepository.save(transcript);
 
-        JsonNode metadata = timelineMetadataBuilder
-                .build(
+        System.out.println("FINALIZED TRANSCRIPT PERIOD: " + transcript.getAcademicPeriod());
+        System.out.println("TRANSCRIPT ID: " + transcript.getPublicId());
+
+        // TIMELINE
+        JsonNode metadata =
+                timelineMetadataBuilder.build(
                         Map.of(
                                 "period",
-                                transcript.getAcademicPeriod()
+                                transcript.getAcademicPeriod(),
+
+                                "courses",
+                                items.size()
                         )
                 );
 
         timelineEventService.createEvent(
-
                 transcript.getInstitutionId(),
                 transcript.getStudentId(),
                 TimelineEventType.TRANSCRIPT_FINALIZED,
-                TimelineEventSource.SYSTEM,
+                TimelineEventSource.INSTITUTION_ADMIN,
                 "Transcript finalized",
                 transcript.getAcademicPeriod(),
                 transcript.getPublicId(),
                 TimelineReferenceType.TRANSCRIPT,
+                transcript.getAcademicPeriod(),
                 metadata
         );
     }
 
-        public void issueTranscript(
-                UUID transcriptPublicId) {
+    // EMITIR TRANSCRIPT
+    public void issueTranscript(
+            UUID transcriptPublicId) {
 
-            Transcript transcript =
-                    queryService.getByPublicId(
-                            transcriptPublicId);
+        Transcript transcript =
+                queryService.getByPublicId(
+                        transcriptPublicId
+                );
 
-            validationService.validateCanIssue(transcript);
-            statusManager.issueTranscript(transcript);
-            transcriptRepository.save(transcript);
+        validationService.validateCanIssue(transcript);
+        statusManager.issueTranscript(transcript);
+        transcriptRepository.save(transcript);
 
-            JsonNode metadata = timelineMetadataBuilder
-                    .build(
-                            Map.of(
-                                    "period", transcript.getAcademicPeriod(),
-                                    "issuedAt", transcript
-                                            .getIssuedAt()
-                                            .toString()
+        // TIMELINE
+        JsonNode metadata =
+                timelineMetadataBuilder.build(
+                        Map.of(
+                                "period",
+                                transcript.getAcademicPeriod(),
 
-                            )
-                    );
+                                "issuedAt",
+                                transcript.getIssuedAt()
+                                        .toString()
+                        )
+                );
 
-            timelineEventService.createEvent(
-
-                    transcript.getInstitutionId(),
-                    transcript.getStudentId(),
-                    TimelineEventType.TRANSCRIPT_ISSUED,
-                    TimelineEventSource.SYSTEM,
-                    "Transcript issued",
-                    "Official academic transcript issued",
-                    transcript.getPublicId(),
-                    TimelineReferenceType.TRANSCRIPT,
-                    metadata
-            );
-
-        }
+        timelineEventService.createEvent(
+                transcript.getInstitutionId(),
+                transcript.getStudentId(),
+                TimelineEventType.TRANSCRIPT_ISSUED,
+                TimelineEventSource.INSTITUTION_ADMIN,
+                "Transcript issued",
+                "Official academic transcript issued",
+                transcript.getPublicId(),
+                TimelineReferenceType.TRANSCRIPT,
+                transcript.getAcademicPeriod(),
+                metadata
+        );
+    }
 }

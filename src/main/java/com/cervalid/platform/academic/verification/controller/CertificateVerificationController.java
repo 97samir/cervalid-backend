@@ -1,5 +1,6 @@
 package com.cervalid.platform.academic.verification.controller;
 
+import com.cervalid.platform.academic.timeline.dto.view.PublicTimelineEventView;
 import com.cervalid.platform.academic.verification.dto.request.VerifyCertificateRequest;
 import com.cervalid.platform.academic.verification.dto.response.VerifyCertificateResponse;
 import com.cervalid.platform.academic.verification.service.CertificateVerificationService;
@@ -7,6 +8,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -39,5 +41,13 @@ public class CertificateVerificationController {
                 certificatePublicId,
                 ip
         );
+    }
+
+    @GetMapping("/public/{certificatePublicId}/timeline")
+    public List<PublicTimelineEventView> getPublicTimeline(
+            @PathVariable UUID certificatePublicId) {
+
+        return verificationService
+                .getPublicTimeline(certificatePublicId);
     }
 }

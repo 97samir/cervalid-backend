@@ -1,7 +1,6 @@
 package com.cervalid.platform.academic.transcript.domain;
 
 import com.cervalid.platform.academic.transcript.entity.TranscriptItem;
-import lombok.*;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
@@ -11,43 +10,71 @@ import java.util.List;
 @Component
 public class TranscriptSummaryCalculator {
 
-    public Summary calculate(List<TranscriptItem> items) {
+    private static final BigDecimal MIN_PASSING_GRADE =
+            BigDecimal.valueOf(11);
 
-        int courses = items.size();
+    public Summary calculate(
+            List<TranscriptItem> items) {
 
-        int credits = items.stream()
-                .mapToInt(TranscriptItem::getCredits)
-                .sum();
+        int coursesCount =
+                items.size();
 
-        BigDecimal weighted = items.stream()
-                .map(i ->
-                        i.getGrade().multiply(
-                                BigDecimal.valueOf(
-                                        i.getCredits())))
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        int creditsEarned =
+                items.stream()
+                        .filter(this::isPassed)
+                        .mapToInt(TranscriptItem::getCredits)
+                        .sum();
+
+        int creditsFailed =
+                items.stream()
+                        .filter(item -> !isPassed(item))
+                        .mapToInt(TranscriptItem::getCredits)
+                        .sum();
+
+        int totalCredits =
+                creditsEarned + creditsFailed;
+
+        BigDecimal weighted =
+                items.stream()
+                        .map(item ->
+                                item.getGrade()
+                                        .multiply(
+                                                BigDecimal.valueOf(
+                                                        item.getCredits())))
+                        .reduce(
+                                BigDecimal.ZERO,
+                                BigDecimal::add);
 
         BigDecimal gpa =
-                credits == 0
+                totalCredits == 0
                         ? BigDecimal.ZERO
                         : weighted.divide(
-                        BigDecimal.valueOf(credits),
+                        BigDecimal.valueOf(totalCredits),
                         2,
                         RoundingMode.HALF_UP);
 
         return Summary.builder()
-                .coursesCount(courses)
-                .creditsEarned(credits)
+                .coursesCount(coursesCount)
+                .creditsEarned(creditsEarned)
+                .creditsFailed(creditsFailed)
                 .gpa(gpa)
                 .build();
     }
 
-    @Data
-    @Builder
+    private boolean isPassed(
+            TranscriptItem item) {
+
+        return item.getGrade()
+                .compareTo(MIN_PASSING_GRADE) >= 0;
+    }
+
+    @lombok.Data
+    @lombok.Builder
     public static class Summary {
 
         private Integer coursesCount;
         private Integer creditsEarned;
+        private Integer creditsFailed;
         private BigDecimal gpa;
     }
-
 }

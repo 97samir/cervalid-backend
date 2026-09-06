@@ -2,43 +2,47 @@ package com.cervalid.platform.academic.transcript.domain;
 
 import com.cervalid.platform.academic.transcript.entity.Transcript;
 import com.cervalid.platform.academic.transcript.entity.TranscriptItem;
-import com.cervalid.platform.academic.transcript.repository.TranscriptItemRepository;
 import com.cervalid.platform.shared.hashing.CanonicalHashService;
 import com.cervalid.platform.shared.hashing.HashService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 
 import java.util.*;
 
-@Service
+@Component
 @RequiredArgsConstructor
 public class TranscriptHashService {
 
-    private final TranscriptItemRepository itemRepository;
     private final CanonicalHashService canonicalHashService;
     private final HashService hashService;
 
-    public String generateTranscriptHash(Long transcriptId) {
+    public String generateHash(
+            Transcript transcript,
+            List<TranscriptItem> items) {
 
-        List<TranscriptItem> items =
-                itemRepository.findByTranscriptId(transcriptId);
-
-        List<Map<String, Object>> normalizedItems = new ArrayList<>();
-
-        for (TranscriptItem item : items) {
-            normalizedItems.add(Map.of(
-                    "courseCode", item.getCourseCode(),
-                    "credits", item.getCredits(),
-                    "grade", item.getGrade()
-            ));
-        }
+        List<Map<String, Object>> normalizedItems =
+                items.stream()
+                        .sorted(
+                                Comparator.comparing(
+                                        TranscriptItem::getCourseCode))
+                        .map(item -> Map.<String, Object>of(
+                                "courseCode", item.getCourseCode(),
+                                "courseName", item.getCourseName(),
+                                "credits", item.getCredits(),
+                                "grade", item.getGrade()
+                        ))
+                        .toList();
 
         Map<String, Object> payload = Map.of(
-                "transcriptId", transcriptId,
-                "items", normalizedItems
-        );
 
-        String canonicalJson = canonicalHashService.canonicalize(payload);
+                "transcriptPublicId", transcript.getPublicId(),
+                "academicPeriodType", transcript.getAcademicPeriodType(),
+                "academicPeriod", transcript.getAcademicPeriod(),
+                "items", normalizedItems
+                );
+
+        String canonicalJson =
+                canonicalHashService.canonicalize(payload);
 
         return hashService.hashString(canonicalJson);
     }

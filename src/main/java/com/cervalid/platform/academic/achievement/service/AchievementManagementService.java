@@ -56,6 +56,7 @@ public class AchievementManagementService {
                         .type(request.getType())
                         .issuer(request.getIssuer())
                         .achievedDate(request.getAchievedDate())
+                        .academicPeriod(request.getAcademicPeriod())
                         .status(AchievementStatus.ACTIVE)
                         .build();
 
@@ -82,6 +83,7 @@ public class AchievementManagementService {
         achievement.setType(request.getType());
         achievement.setIssuer(request.getIssuer());
         achievement.setAchievedDate(request.getAchievedDate());
+        achievement.setAcademicPeriod(request.getAcademicPeriod());
 
         Achievement saved = repository.save(achievement);
 

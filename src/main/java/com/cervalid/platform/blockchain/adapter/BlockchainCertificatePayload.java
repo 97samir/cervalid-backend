@@ -2,7 +2,9 @@ package com.cervalid.platform.blockchain.adapter;
 
 import lombok.*;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
 
@@ -19,20 +21,29 @@ public class BlockchainCertificatePayload {
     private String verificationHash;
     private Long studentId;
     private Long institutionId;
+    private String title;
+    private LocalDate awardedAt;
+    private String documentHash;
     private LocalDateTime issuedAt;
-    private String network; // e.g. "POLYGON", "ETHEREUM"
+    private String network;
 
     public Map<String, Object> toMap() {
-        return Map.of(
-                "certificatePublicId", certificatePublicId.toString(),
-                "certificateNumber", certificateNumber,
-                "certificateHash", certificateHash,
-                "transcriptHash", transcriptHash,
-                "verificationHash", verificationHash,
-                "studentId", studentId,
-                "institutionId", institutionId,
-                "issuedAt", issuedAt.toString(),
-                "network", network
-        );
+
+        Map<String, Object> payload =
+                new LinkedHashMap<>();
+
+        payload.put("certificatePublicId", certificatePublicId);
+        payload.put("certificateNumber", certificateNumber);
+        payload.put("certificateHash", certificateHash);
+        payload.put("transcriptHash", transcriptHash);
+        payload.put("verificationHash", verificationHash);
+        payload.put("studentId", studentId);
+        payload.put("institutionId", institutionId);
+        payload.put("title", title);
+        payload.put("awardedAt", awardedAt);
+        payload.put("documentHash", documentHash);
+        payload.put("issuedAt", issuedAt);
+
+        return payload;
     }
 }

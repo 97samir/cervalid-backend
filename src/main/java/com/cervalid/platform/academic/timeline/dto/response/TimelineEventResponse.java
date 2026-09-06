@@ -23,6 +23,7 @@ public class TimelineEventResponse {
     private String description;
     private UUID referenceId;
     private TimelineReferenceType referenceType;
+    private String academicPeriod;
     private LocalDateTime eventDate;
     private JsonNode metadataJson;
 

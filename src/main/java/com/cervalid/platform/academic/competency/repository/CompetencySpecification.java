@@ -8,11 +8,15 @@ import org.springframework.data.jpa.domain.Specification;
 import java.util.ArrayList;
 import java.util.List;
 
-public class CompetencySpecification {
+public final class CompetencySpecification {
+
+    private CompetencySpecification() {
+    }
 
     public static Specification<Competency> filter(
             CompetencyFilterRequest request,
-            Long institutionId) {
+            Long institutionId,
+            Long studentId) {
 
         return (root, query, cb) -> {
 
@@ -24,12 +28,11 @@ public class CompetencySpecification {
                             root.get("institutionId"),
                             institutionId));
 
-            if (request.getStudentPublicId() != null) {
-
+            if (studentId != null) {
                 predicates.add(
                         cb.equal(
-                                root.get("studentPublicId"),
-                                request.getStudentPublicId()));
+                                root.get("studentId"),
+                                studentId));
             }
 
             if (request.getName() != null &&
@@ -37,8 +40,13 @@ public class CompetencySpecification {
 
                 predicates.add(
                         cb.like(
-                                cb.lower(root.get("name")),
-                                "%" + request.getName().toLowerCase() + "%"));
+                                cb.lower(
+                                        root.get("name")),
+                                "%" +
+                                        request.getName()
+                                                .trim()
+                                                .toLowerCase() +
+                                        "%"));
             }
 
             if (request.getLevel() != null) {
@@ -57,8 +65,19 @@ public class CompetencySpecification {
                                 request.getStatus()));
             }
 
+            if (request.getAcademicPeriod() != null &&
+                    !request.getAcademicPeriod().isBlank()) {
+
+                predicates.add(
+                        cb.equal(
+                                root.get("academicPeriod"),
+                                request.getAcademicPeriod()
+                                        .trim()));
+            }
+
             return cb.and(
-                    predicates.toArray(new Predicate[0]));
+                    predicates.toArray(
+                            new Predicate[0]));
         };
     }
 }

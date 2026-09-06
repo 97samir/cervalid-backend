@@ -5,6 +5,7 @@ import com.cervalid.platform.academic.competency.dto.request.CreateCompetencyReq
 import com.cervalid.platform.academic.competency.dto.request.UpdateCompetencyRequest;
 import com.cervalid.platform.academic.competency.dto.response.CompetencyResponse;
 import com.cervalid.platform.academic.competency.service.CompetencyService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.web.bind.annotation.*;
@@ -22,7 +23,7 @@ public class CompetencyController {
     @PostMapping("/students/{studentPublicId}")
     public CompetencyResponse create(
             @PathVariable UUID studentPublicId,
-            @RequestBody CreateCompetencyRequest request) {
+            @Valid @RequestBody CreateCompetencyRequest request) {
 
         return competencyService.create(
                 studentPublicId,
@@ -60,7 +61,7 @@ public class CompetencyController {
     @PutMapping("/{publicId}")
     public CompetencyResponse update(
             @PathVariable UUID publicId,
-            @RequestBody UpdateCompetencyRequest request) {
+            @Valid @RequestBody UpdateCompetencyRequest request) {
 
         return competencyService.update(
                 publicId,

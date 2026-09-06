@@ -4,15 +4,18 @@ import com.cervalid.platform.academic.competency.dto.response.CompetencyResponse
 import com.cervalid.platform.academic.competency.entity.Competency;
 import org.springframework.stereotype.Component;
 
+import java.util.UUID;
+
 @Component
 public class CompetencyMapper {
 
     public CompetencyResponse toResponse(
-            Competency competency) {
+            Competency competency,
+            UUID studentPublicId) {
 
         return CompetencyResponse.builder()
                 .publicId(competency.getPublicId())
-                .studentPublicId(competency.getStudentPublicId())
+                .studentPublicId(studentPublicId)
                 //.institutionId(competency.getInstitutionId())
                 .name(competency.getName())
                 .description(competency.getDescription())
@@ -23,6 +26,7 @@ public class CompetencyMapper {
                 .acquiredDate(competency.getAcquiredDate())
                 .evidenceReference(competency.getEvidenceReference())
                 .evidenceType(competency.getEvidenceType())
+                .academicPeriod(competency.getAcademicPeriod())
                 .build();
     }
 }

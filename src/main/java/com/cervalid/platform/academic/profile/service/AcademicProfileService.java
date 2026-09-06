@@ -1,15 +1,12 @@
 package com.cervalid.platform.academic.profile.service;
 // estado academico dinamico
 // a diferencia de STUDENT - identidad academica
-import com.cervalid.platform.academic.profile.domain.ProfileFactory;
 import com.cervalid.platform.academic.profile.dto.filter.AcademicProfileFilterRequest;
 import com.cervalid.platform.academic.profile.dto.internal.CreateAcademicProfileCommand;
 import com.cervalid.platform.academic.profile.dto.request.AcademicProfileRequest;
 import com.cervalid.platform.academic.profile.dto.response.AcademicProfileResponse;
 import com.cervalid.platform.academic.profile.dto.request.UpdateAcademicProfileRequest;
-import com.cervalid.platform.academic.profile.mapper.ProfileMapper;
 import com.cervalid.platform.academic.profile.repository.AcademicProfileRepository;
-import com.cervalid.platform.academic.profile.entity.AcademicProfile;
 import com.cervalid.platform.academic.student.entity.Student;
 import com.cervalid.platform.academic.student.service.StudentQueryService;
 import com.cervalid.platform.security.context.SecurityContextService;
@@ -28,8 +25,6 @@ public class AcademicProfileService {
     private final AcademicProfileRepository repository;
     private final StudentQueryService studentQueryService;
     private final SecurityContextService securityContextService;
-    private final ProfileFactory profileFactory;
-    private final ProfileMapper mapper;
     private final AcademicProfileDetailQueryService detailQueryService;
     private final AcademicProfileManagementService managementService;
     private final AcademicProfileSearchService searchService;
@@ -38,9 +33,11 @@ public class AcademicProfileService {
             UUID studentPublicId,
             AcademicProfileRequest request) {
 
-        Long institutionId = securityContextService.getInstitutionId();
+        Long institutionId =
+                securityContextService.getInstitutionId();
 
-        Student student = studentQueryService.getByPublicId(studentPublicId);
+        Student student =
+                studentQueryService.getByPublicId(studentPublicId);
 
         if (!student.getInstitutionId().equals(institutionId)) {
             throw new RuntimeException("Student does not belong to institution");
@@ -55,13 +52,10 @@ public class AcademicProfileService {
                         .modality(request.getModality())
                         .currentCycle(request.getCurrentCycle())
                         .advisor(request.getAdvisor())
+                        .academicPeriod(request.getAcademicPeriod())
                         .build();
 
-        AcademicProfile profile = profileFactory.create(command);
-
-        AcademicProfile saved = repository.save(profile);
-
-        return mapper.toResponse(saved);
+        return managementService.create(command);
     }
 
     public AcademicProfileResponse getByStudentPublicId(

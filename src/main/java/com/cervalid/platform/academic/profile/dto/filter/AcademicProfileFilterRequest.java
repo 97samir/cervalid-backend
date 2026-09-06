@@ -9,4 +9,5 @@ public class AcademicProfileFilterRequest {
     private String program;
     private String faculty;
     private Boolean active;
+    private String academicPeriod;
 }

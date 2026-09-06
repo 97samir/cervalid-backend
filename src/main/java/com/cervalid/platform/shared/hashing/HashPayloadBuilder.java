@@ -29,6 +29,8 @@ public class HashPayloadBuilder {
             Long institutionId,
             String certificateNumber,
             String transcriptHash,
+            String title,
+            String awardedAt,
             String issuedAt) {
 
         return Map.of(
@@ -37,6 +39,8 @@ public class HashPayloadBuilder {
                 "institutionId", institutionId,
                 "certificateNumber", certificateNumber,
                 "transcriptHash", transcriptHash,
+                "title", title,
+                "awardedAt", awardedAt,
                 "issuedAt", issuedAt
         );
     }

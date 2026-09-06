@@ -43,6 +43,7 @@ public class TimelineEventService {
             String description,
             UUID referenceId,
             TimelineReferenceType referenceType,
+            String academicPeriod,
             JsonNode metadataJson) {
 
         boolean isSystemEvent = source == TimelineEventSource.SYSTEM;
@@ -61,6 +62,7 @@ public class TimelineEventService {
                 .description(description)
                 .referenceId(referenceId)
                 .referenceType(referenceType)
+                .academicPeriod(academicPeriod)
                 .metadataJson(metadataJson)
                 .eventDate(LocalDateTime.now())
                 .build();
@@ -87,12 +89,13 @@ public class TimelineEventService {
         TimelineEvent saved = createEvent(
                 institutionId,
                 student.getId(),
-                MANUAL_EVENT,
+                TimelineEventType.MANUAL_EVENT,
                 TimelineEventSource.INSTITUTION_ADMIN,
                 request.getTitle(),
                 request.getDescription(),
                 null, // nul por que es manual
                 TimelineReferenceType.MANUAL,
+                null,
                 metadata
         );
 

@@ -23,6 +23,7 @@ public class UserContext {
         institutionId.set(id);
     }
 
+    /*
     public static Long getInstitutionId() {
 
         Long id = institutionId.get();
@@ -35,6 +36,12 @@ public class UserContext {
         }
 
         return id;
+    }
+     */
+
+    // por si no inicia sesion el superadmin
+    public static Long getInstitutionId() {
+        return institutionId.get();
     }
 
     // -------- ROLE --------

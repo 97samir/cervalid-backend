@@ -95,4 +95,31 @@ public class CertificateValidationService {
                     "Certificate already issued");
         }
     }
+
+    // no permitir modificar un certificado anclado
+    public void validateCanUpdateCredential(
+            Certificate certificate) {
+
+        if (certificate == null) {
+            throw new RuntimeException(
+                    "Certificate not found"
+            );
+        }
+
+        if (certificate.getStatus()
+                == CertificateStatus.REVOKED) {
+
+            throw new IllegalStateException(
+                    "No se puede modificar la credencial de un certificado revocado."
+            );
+        }
+
+        if (certificate.getBlockchainTxHash() != null
+                && !certificate.getBlockchainTxHash().isBlank()) {
+
+            throw new IllegalStateException(
+                    "No se puede modificar la credencial de un certificado ya registrado en blockchain."
+            );
+        }
+    }
 }

@@ -22,10 +22,16 @@ public class CertificateResponse {
     private CertificateStatus status;
     private CertificateType type;
 
+    private String title;
+    private LocalDate awardedAt;
+
     private String hash;
     private String blockchainTxHash;
     private String verificationHash;
     private String verificationUrl;
+
+    private String documentHash;
+    private String documentUrl;
 
     private JsonNode snapshotJson;
 

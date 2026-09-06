@@ -2,15 +2,20 @@ package com.cervalid.platform.academic.certificate.controller;
 
 import com.cervalid.platform.academic.certificate.dto.request.CertificateSearchRequest;
 import com.cervalid.platform.academic.certificate.dto.request.IssueCertificateRequest;
+import com.cervalid.platform.academic.certificate.dto.request.UpdateCertificateCredentialRequest;
 import com.cervalid.platform.academic.certificate.dto.response.CertificateDetailResponse;
+import com.cervalid.platform.academic.certificate.dto.response.CertificateDocumentResponse;
 import com.cervalid.platform.academic.certificate.dto.response.CertificateResponse;
 import com.cervalid.platform.academic.certificate.service.CertificateService;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.UUID;
 
@@ -24,10 +29,14 @@ public class CertificateController {
     // CREA / EMITE - ISSUE FROM TRANSCRIPT (RESTFUL)
     @PostMapping("/transcripts/{transcriptPublicId}")
     public ResponseEntity<CertificateResponse> issueFromTranscript(
-            @PathVariable UUID transcriptPublicId) {
+            @PathVariable UUID transcriptPublicId,
+            @RequestBody(required = false)
+            IssueCertificateRequest request) {
 
-        return ResponseEntity.ok(certificateService
-                .issueFromTranscript(transcriptPublicId)
+        return ResponseEntity.ok(
+                certificateService.issueFromTranscript(
+                        transcriptPublicId,
+                        request)
         );
     }
 
@@ -103,6 +112,42 @@ public class CertificateController {
 
         return ResponseEntity.ok(
                 certificateService.getDetail(publicId)
+        );
+    }
+
+    @PutMapping(
+            value = "/{publicId}/document",
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public CertificateDocumentResponse updateDocument(
+
+            @PathVariable UUID publicId,
+            @RequestPart(value = "file", required = false)
+            MultipartFile file,
+            @RequestParam(value = "documentHash", required = false)
+            String documentHash,
+            @RequestParam(value = "documentUrl", required = false)
+            String documentUrl) {
+
+        return certificateService.updateDocument(
+                publicId,
+                file,
+                documentHash,
+                documentUrl
+        );
+    }
+
+    @PutMapping(
+            value = "/{publicId}/credential",
+            consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<CertificateResponse> updateCredential(
+            @PathVariable UUID publicId,
+            @RequestBody UpdateCertificateCredentialRequest request) {
+
+        return ResponseEntity.ok(
+                certificateService.updateCredential(
+                        publicId,
+                        request
+                )
         );
     }
 }

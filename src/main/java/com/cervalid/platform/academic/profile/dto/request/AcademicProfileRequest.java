@@ -1,5 +1,7 @@
 package com.cervalid.platform.academic.profile.dto.request;
 
+import com.cervalid.platform.academic.profile.enums.AcademicFaculty;
+import com.cervalid.platform.academic.profile.enums.AcademicProgram;
 import lombok.*;
 
 @Data
@@ -8,9 +10,10 @@ import lombok.*;
 @AllArgsConstructor
 public class AcademicProfileRequest {
 
-    private String program;
-    private String faculty;
+    private AcademicProgram program;
+    private AcademicFaculty faculty;
     private String modality;
     private Integer currentCycle;
     private String advisor; // tutor
+    private String academicPeriod;
 }

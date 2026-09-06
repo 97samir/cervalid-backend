@@ -24,20 +24,24 @@ public class SecurityContextService {
             return id;
         }
 
-        // FALLBACK (MUY IMPORTANTE)
-        var auth = SecurityContextHolder.getContext().getAuthentication();
+        var auth = SecurityContextHolder
+                .getContext()
+                .getAuthentication();
 
-        if (auth != null && auth.getPrincipal() instanceof CustomUserDetails user) {
+        if (auth != null &&
+                auth.getPrincipal() instanceof CustomUserDetails user) {
+
             Object claim = user.getClaims().get("institutionId");
 
             if (claim != null) {
                 try {
                     return Long.parseLong(claim.toString());
-                } catch (Exception ignored) {}
+                } catch (NumberFormatException ignored) {
+                }
             }
         }
 
-        throw new IllegalStateException("InstitutionId not found anywhere");
+        return null;
     }
 
     public String getWalletAddress() {

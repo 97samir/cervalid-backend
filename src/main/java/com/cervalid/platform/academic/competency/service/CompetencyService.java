@@ -4,7 +4,10 @@ import com.cervalid.platform.academic.competency.dto.filter.CompetencyFilterRequ
 import com.cervalid.platform.academic.competency.dto.request.CreateCompetencyRequest;
 import com.cervalid.platform.academic.competency.dto.request.UpdateCompetencyRequest;
 import com.cervalid.platform.academic.competency.dto.response.CompetencyResponse;
+import com.cervalid.platform.academic.competency.entity.Competency;
 import com.cervalid.platform.academic.competency.mapper.CompetencyMapper;
+import com.cervalid.platform.academic.student.entity.Student;
+import com.cervalid.platform.academic.student.service.StudentQueryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
@@ -19,15 +22,20 @@ public class CompetencyService {
     private final CompetencyManagementService managementService;
     private final CompetencyQueryService queryService;
     private final CompetencyMapper mapper;
+    private final StudentQueryService studentQueryService;
 
     public CompetencyResponse create(
             UUID studentPublicId,
             CreateCompetencyRequest request) {
 
-        return mapper.toResponse(
+        Competency competency =
                 managementService.create(
                         studentPublicId,
-                        request));
+                        request);
+
+        return mapper.toResponse(
+                competency,
+                studentPublicId);
     }
 
     public CompetencyResponse getByPublicId(
@@ -59,10 +67,18 @@ public class CompetencyService {
             UUID publicId,
             UpdateCompetencyRequest request) {
 
-        return mapper.toResponse(
+        Competency competency =
                 managementService.update(
                         publicId,
-                        request));
+                        request);
+
+        Student student =
+                studentQueryService.getById(
+                        competency.getStudentId());
+
+        return mapper.toResponse(
+                competency,
+                student.getPublicId());
     }
 
     public void deactivate(
@@ -71,5 +87,4 @@ public class CompetencyService {
         managementService.deactivate(
                 publicId);
     }
-
 }

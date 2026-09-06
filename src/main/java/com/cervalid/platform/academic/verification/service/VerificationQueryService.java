@@ -6,7 +6,7 @@ import com.cervalid.platform.academic.profile.entity.AcademicProfile;
 import com.cervalid.platform.academic.student.entity.Student;
 import com.cervalid.platform.academic.student.repository.StudentRepository;
 import com.cervalid.platform.academic.verification.dto.view.VerificationHistoryView;
-import com.cervalid.platform.academic.verification.dto.view.VerificationView;
+import com.cervalid.platform.academic.verification.dto.view.PublicCertificateView;
 import com.cervalid.platform.academic.verification.entity.VerificationRecord;
 import com.cervalid.platform.institution.entity.Institution;
 import com.cervalid.platform.institution.repository.InstitutionRepository;
@@ -25,7 +25,7 @@ public class VerificationQueryService {
     private final InstitutionRepository institutionRepository;
     private final AcademicProfileRepository academicProfileRepository;
 
-    public VerificationView buildVerificationView(
+    public PublicCertificateView buildVerificationView(
             Long studentId,
             Long institutionId) {
 
@@ -33,7 +33,7 @@ public class VerificationQueryService {
                 .findByStudentId(studentId)
                 .orElse(null);
 
-        return VerificationView.builder()
+        return PublicCertificateView.builder()
                 .studentName(resolveStudentName(studentId))
                 .institutionName(resolveInstitutionName(institutionId))
                 .program(profile != null ? profile.getProgram() : null)
@@ -86,7 +86,7 @@ public class VerificationQueryService {
             VerificationRecord record) {
 
         Certificate certificate = record.getCertificate();
-        VerificationView verificationView = null;
+        PublicCertificateView verificationView = null;
 
         if (certificate != null) {
             verificationView = buildVerificationView(

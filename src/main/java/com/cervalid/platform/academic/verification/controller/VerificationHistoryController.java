@@ -19,17 +19,21 @@ public class VerificationHistoryController {
     private final VerificationHistoryService verificationHistoryService;
 
     @GetMapping("/certificate/{certificatePublicId}")
-    public List<VerificationHistoryResponse> byCertificate(
-            @PathVariable UUID certificatePublicId) {
+    public Page<VerificationHistoryResponse> byCertificate(
+            @PathVariable UUID certificatePublicId,
+            Pageable pageable) {
 
         return verificationHistoryService.getByCertificate(
-                certificatePublicId);
+                certificatePublicId,
+                pageable);
     }
 
     @GetMapping("/institution")
-    public List<VerificationHistoryResponse> byInstitution() {
+    public Page<VerificationHistoryResponse> byInstitution(
+            Pageable pageable) {
 
-        return verificationHistoryService.getByInstitution();
+        return verificationHistoryService.getByInstitution(
+                pageable);
     }
 
     @PostMapping("/search")

@@ -14,4 +14,5 @@ public class CompetencyFilterRequest {
     private String name;
     private CompetencyLevel level;
     private CompetencyStatus status;
+    private String academicPeriod;
 }

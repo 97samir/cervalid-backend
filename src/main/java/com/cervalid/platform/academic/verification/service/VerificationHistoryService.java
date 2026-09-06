@@ -5,7 +5,6 @@ import com.cervalid.platform.academic.certificate.repository.CertificateReposito
 import com.cervalid.platform.academic.certificate.service.CertificateQueryService;
 import com.cervalid.platform.academic.verification.dto.request.VerificationHistoryFilterRequest;
 import com.cervalid.platform.academic.verification.dto.response.VerificationHistoryResponse;
-import com.cervalid.platform.academic.verification.dto.view.VerificationView;
 import com.cervalid.platform.academic.verification.entity.VerificationRecord;
 import com.cervalid.platform.academic.verification.mapper.VerificationHistoryMapper;
 import com.cervalid.platform.academic.verification.repository.VerificationRecordRepository;
@@ -16,7 +15,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -30,8 +28,9 @@ public class VerificationHistoryService {
     private final CertificateQueryService certificateQueryService;
     private final VerificationQueryService verificationQueryService;
 
-    public List<VerificationHistoryResponse> getByCertificate(
-            UUID certificatePublicId) {
+    public Page<VerificationHistoryResponse> getByCertificate(
+            UUID certificatePublicId,
+            Pageable pageable) {
 
         Long institutionId =
                 securityContextService.getInstitutionId();
@@ -48,25 +47,24 @@ public class VerificationHistoryService {
         return repository
                 .findByCertificateIdAndInstitutionIdOrderByVerifiedAtDesc(
                         certificate.getId(),
-                        institutionId)
-                .stream()
+                        institutionId,
+                        pageable)
                 .map(verificationQueryService::buildHistoryView)
-                .map(verificationHistoryMapper::toResponse)
-                .toList();
+                .map(verificationHistoryMapper::toResponse);
     }
 
-    public List<VerificationHistoryResponse> getByInstitution() {
+    public Page<VerificationHistoryResponse> getByInstitution(
+            Pageable pageable) {
 
         Long institutionId =
                 securityContextService.getInstitutionId();
 
         return repository
                 .findByInstitutionIdOrderByVerifiedAtDesc(
-                        institutionId)
-                .stream()
+                        institutionId,
+                        pageable)
                 .map(verificationQueryService::buildHistoryView)
-                .map(verificationHistoryMapper::toResponse)
-                .toList();
+                .map(verificationHistoryMapper::toResponse);
     }
 
     public Page<VerificationHistoryResponse> search(
@@ -79,6 +77,7 @@ public class VerificationHistoryService {
         Long certificateId = null;
 
         if (request.getCertificatePublicId() != null) {
+
             certificateId =
                     certificateQueryService
                             .getCertificate(
@@ -86,13 +85,13 @@ public class VerificationHistoryService {
                             .getId();
         }
 
-        return repository.findAll(
+        return repository
+                .findAll(
                         VerificationSpecification.filter(
                                 request,
                                 institutionId,
                                 certificateId),
                         pageable)
-
                 .map(verificationQueryService::buildHistoryView)
                 .map(verificationHistoryMapper::toResponse);
     }

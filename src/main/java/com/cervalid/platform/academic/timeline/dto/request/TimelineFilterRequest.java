@@ -17,6 +17,7 @@ public class TimelineFilterRequest {
     private TimelineEventType type;
     private TimelineEventSource source;
     private TimelineReferenceType referenceType;
+    private String academicPeriod;
     private LocalDate fromDate;
     private LocalDate toDate;
     private String keyword;

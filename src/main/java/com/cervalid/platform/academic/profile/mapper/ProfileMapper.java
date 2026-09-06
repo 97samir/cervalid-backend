@@ -18,6 +18,7 @@ public class ProfileMapper {
                 .currentCycle(profile.getCurrentCycle())
                 .advisor(profile.getAdvisor())
                 .active(profile.getActive())
+                .academicPeriod(profile.getAcademicPeriod())
                 .build();
     }
 

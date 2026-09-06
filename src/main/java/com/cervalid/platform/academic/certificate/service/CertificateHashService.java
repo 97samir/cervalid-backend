@@ -31,6 +31,8 @@ public class CertificateHashService {
                         certificate.getStudentId(),
                         certificate.getInstitutionId(),
                         certificate.getCertificateNumber(),
+                        certificate.getTitle(),
+                        certificate.getAwardedAt().toString(),
                         certificate.getTranscriptHash(),
                         certificate.getIssuedAt().toString()
                 );
@@ -50,8 +52,7 @@ public class CertificateHashService {
         certificate.setVerificationHash(verificationHash);
 
         certificate.setSnapshotJson(snapshotBuilder.build(
-                        certificate.getStudentId(),
-                        certificate.getInstitutionId()));
+                        certificate));
 
         certificate.setVerificationUrl(
                 verificationUrlBuilder.build(
