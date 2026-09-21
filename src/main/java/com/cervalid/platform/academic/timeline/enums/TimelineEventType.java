@@ -32,6 +32,9 @@ public enum TimelineEventType {
     ACHIEVEMENT_DEACTIVATED,
     ACHIEVEMENT_UPDATED,
 
+    CREDENTIAL_ISSUED,
+    CREDENTIAL_REVOKED,
+
     BADGE_GRANTED, // insignia otorgada
 
     MANUAL_EVENT

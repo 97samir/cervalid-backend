@@ -7,7 +7,8 @@ public enum TimelineReferenceType {
     TRANSCRIPT,
     CERTIFICATE,
     COMPETENCY,
-    ACHIEVEMENT, // logro
+    ACHIEVEMENT,
+    CREDENTIAL,// logro
     BADGE,
     MANUAL
 }

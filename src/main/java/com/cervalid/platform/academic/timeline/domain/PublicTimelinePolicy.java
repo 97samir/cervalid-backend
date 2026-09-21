@@ -31,6 +31,9 @@ public class PublicTimelinePolicy {
                     TimelineEventType.ACHIEVEMENT_EARNED,
                     //TimelineEventType.ACHIEVEMENT_UPDATED,
 
+                    TimelineEventType.CREDENTIAL_ISSUED,
+                    TimelineEventType.CREDENTIAL_REVOKED,
+
                     TimelineEventType.BADGE_GRANTED,
 
                     TimelineEventType.MANUAL_EVENT

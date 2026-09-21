@@ -16,6 +16,10 @@ public interface StudentRepository extends
     Optional<Student> findByPublicId(
             UUID publicId);
 
+    Optional<Student> findByIdAndInstitutionId(
+            Long id,
+            Long institutionId);
+
     Optional<Student> findByInstitutionMembershipId(
             Long membershipId);
 

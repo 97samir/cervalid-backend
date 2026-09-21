@@ -115,8 +115,7 @@ public class CertificateController {
         );
     }
 
-    @PutMapping(
-            value = "/{publicId}/document",
+    @PutMapping(value = "/{publicId}/document",
             consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public CertificateDocumentResponse updateDocument(
 
