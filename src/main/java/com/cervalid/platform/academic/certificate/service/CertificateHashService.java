@@ -31,9 +31,10 @@ public class CertificateHashService {
                         certificate.getStudentId(),
                         certificate.getInstitutionId(),
                         certificate.getCertificateNumber(),
-                        certificate.getTitle(),
-                        certificate.getAwardedAt().toString(),
                         certificate.getTranscriptHash(),
+                        certificate.getTitle(),
+                        certificate.getDescription(),
+                        certificate.getAwardedAt().toString(),
                         certificate.getIssuedAt().toString()
                 );
 

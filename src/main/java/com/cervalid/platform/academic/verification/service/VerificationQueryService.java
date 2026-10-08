@@ -1,6 +1,7 @@
 package com.cervalid.platform.academic.verification.service;
 
 import com.cervalid.platform.academic.certificate.entity.Certificate;
+import com.cervalid.platform.academic.credential.entity.Credential;
 import com.cervalid.platform.academic.profile.repository.AcademicProfileRepository;
 import com.cervalid.platform.academic.profile.entity.AcademicProfile;
 import com.cervalid.platform.academic.student.entity.Student;
@@ -43,7 +44,8 @@ public class VerificationQueryService {
                 .build();
     }
 
-    public String resolveStudentName(Long studentId) {
+    public String resolveStudentName(
+            Long studentId) {
 
         Student student = studentRepository
                 .findById(studentId)
@@ -70,7 +72,8 @@ public class VerificationQueryService {
         return user.getName() + " " + user.getLastName();
     }
 
-    public String resolveInstitutionName(Long institutionId) {
+    public String resolveInstitutionName(
+            Long institutionId) {
 
         if (institutionId == null) {
             return null;
@@ -85,42 +88,115 @@ public class VerificationQueryService {
     public VerificationHistoryView buildHistoryView(
             VerificationRecord record) {
 
-        Certificate certificate = record.getCertificate();
-        PublicCertificateView verificationView = null;
+        if (record.getCredential() != null) {
 
-        if (certificate != null) {
-            verificationView = buildVerificationView(
-                    certificate.getStudentId(),
-                    certificate.getInstitutionId()
-            );
+            return buildCredentialHistoryView(record);
         }
+
+        if (record.getCertificate() != null) {
+
+            return buildCertificateHistoryView(record);
+        }
+
+        return buildEmptyHistoryView(record);
+    }
+
+    private VerificationHistoryView buildCertificateHistoryView(
+            VerificationRecord record) {
+
+        Certificate certificate =
+                record.getCertificate();
+
+        PublicCertificateView verificationView =
+                buildVerificationView(
+                        certificate.getStudentId(),
+                        certificate.getInstitutionId()
+                );
 
         return VerificationHistoryView.builder()
                 .publicId(record.getPublicId())
-                .certificatePublicId(certificate != null
-                        ? certificate.getPublicId()
-                        : null)
-
-                .certificateNumber(record.getCertificateNumber())
-
-                .certificateType(certificate != null
-                        && certificate.getType() != null
+                .verificationType("CERTIFICATE")
+                .resourcePublicId(certificate.getPublicId())
+                .resourceNumber(record.getCertificateNumber())
+                .resourceType(certificate.getType()
+                        != null
                         ? certificate.getType().name()
                         : null)
-
-                .studentName(verificationView != null
+                .studentName(verificationView
+                        != null
                         ? verificationView.getStudentName()
                         : null)
-
-                .institutionName(verificationView != null
+                .institutionName(verificationView
+                        != null
                         ? verificationView.getInstitutionName()
                         : null)
-
                 .verificationReason(record.getVerificationReason())
                 .status(record.getStatus().name())
                 .verificationSource(record.getVerificationSource().name())
                 .ip(record.getVerifiedByIp())
                 .verifiedAt(record.getVerifiedAt())
+                .build();
+    }
+
+    private VerificationHistoryView buildCredentialHistoryView(
+            VerificationRecord record) {
+
+        Credential credential = record.getCredential();
+
+        String studentName =
+                resolveStudentName(
+                        credential.getStudentId()
+                );
+
+        String institutionName =
+                resolveInstitutionName(
+                        credential.getInstitutionId()
+                );
+
+        return VerificationHistoryView.builder()
+                .publicId(record.getPublicId())
+                .verificationType("CREDENTIAL")
+                .resourcePublicId(credential.getPublicId())
+                .resourceNumber(credential.getCredentialNumber())
+                .resourceType(credential.getType()
+                        != null
+                        ? credential.getType().name()
+                        : null)
+                .studentName(studentName)
+                .institutionName(institutionName)
+                .verificationReason(record.getVerificationReason())
+                .status(record.getStatus().name())
+                .verificationSource(record.getVerificationSource().name())
+                .ip(record.getVerifiedByIp())
+                .verifiedAt(record.getVerifiedAt())
+                .build();
+    }
+
+    private VerificationHistoryView buildEmptyHistoryView(
+            VerificationRecord record) {
+
+        return VerificationHistoryView.builder()
+
+                .publicId(record.getPublicId())
+                .verificationType(null)
+                .resourcePublicId(null)
+                .resourceNumber(record.getCertificateNumber())
+                .resourceType(null)
+                .studentName(null)
+                .institutionName(resolveInstitutionName(
+                        record.getInstitutionId()))
+                .verificationReason(record.getVerificationReason())
+                .status(record.getStatus()
+                        != null
+                        ? record.getStatus().name()
+                        : null)
+                .verificationSource(record.getVerificationSource()
+                        != null
+                        ? record.getVerificationSource().name()
+                        : null)
+                .ip(record.getVerifiedByIp())
+                .verifiedAt(record.getVerifiedAt())
+
                 .build();
     }
 }

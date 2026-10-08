@@ -62,6 +62,7 @@ public class CertificateManagementService {
                         transcript,
                         request.getType(),
                         request.getTitle(),
+                        request.getDescription(),
                         request.getAwardedAt(),
                         request.getDocumentHash(),
                         request.getDocumentUrl()
@@ -93,6 +94,10 @@ public class CertificateManagementService {
                                 ? request.getTitle()
                                 : null)
 
+                        .description(request != null
+                                ? request.getDescription()
+                                : null)
+
                         .awardedAt(request != null
                                 ? request.getAwardedAt()
                                 : null)
@@ -122,6 +127,10 @@ public class CertificateManagementService {
         validateCredentialRequest(request);
 
         certificate.setTitle(request.getTitle().trim());
+        certificate.setDescription(request.getDescription()
+                != null
+                ? request.getDescription().trim()
+                : null);
         certificate.setAwardedAt(request.getAwardedAt());
         certificateHashService.generateHashes(certificate);
 

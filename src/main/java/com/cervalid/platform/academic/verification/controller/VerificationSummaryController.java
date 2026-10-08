@@ -1,7 +1,7 @@
 package com.cervalid.platform.academic.verification.controller;
 
-import com.cervalid.platform.academic.verification.dto.request.VerificationCertificateSummaryFilterRequest;
-import com.cervalid.platform.academic.verification.dto.response.VerificationCertificateSummaryResponse;
+import com.cervalid.platform.academic.verification.dto.request.VerificationSummaryFilterRequest;
+import com.cervalid.platform.academic.verification.dto.response.VerificationSummaryResponse;
 import com.cervalid.platform.academic.verification.service.VerificationSummaryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -15,9 +15,9 @@ public class VerificationSummaryController {
 
     private final VerificationSummaryService service;
 
-    @GetMapping public Page<VerificationCertificateSummaryResponse> search(
+    @GetMapping public Page<VerificationSummaryResponse> search(
             @ModelAttribute
-            VerificationCertificateSummaryFilterRequest request,
+            VerificationSummaryFilterRequest request,
             Pageable pageable) {
         return service.search( request, pageable );
     }

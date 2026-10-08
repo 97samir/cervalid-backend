@@ -28,6 +28,7 @@ public class VerifyCertificateResponse {
     private String modality;
     private Integer currentCycle;
     private String certificateType;
+    private String title;
 
     private String documentHash;
     private String documentUrl;

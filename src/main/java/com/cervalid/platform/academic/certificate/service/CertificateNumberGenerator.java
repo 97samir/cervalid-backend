@@ -15,7 +15,7 @@ public class CertificateNumberGenerator {
                 + "-"
                 + UUID.randomUUID()
                 .toString()
-                .substring(0,6)
+                .substring(0,8)
                 .toUpperCase();
     }
 }

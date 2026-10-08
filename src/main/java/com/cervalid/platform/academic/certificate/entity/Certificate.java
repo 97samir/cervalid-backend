@@ -43,6 +43,9 @@ public class Certificate {
     @Column(nullable = false)
     private String title;
 
+    @Column(name = "description", length = 1000)
+    private String description;
+
     @Column(nullable = false)
     private LocalDate awardedAt; // localDate solo fecha no instancia de seg
 

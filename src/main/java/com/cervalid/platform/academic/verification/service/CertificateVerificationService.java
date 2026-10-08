@@ -46,7 +46,7 @@ public class CertificateVerificationService {
 
         String providedHash =
                 hashService.normalizeHash(
-                        request.getHash());
+                        request.getVerificationHash());
 
         Certificate certificate =
                 certificateRepository

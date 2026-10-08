@@ -7,8 +7,9 @@ import java.time.LocalDate;
 
 @Getter
 @Setter
-public class VerificationCertificateSummaryFilterRequest {
+public class VerificationSummaryFilterRequest {
 
+    private String verificationType;
     private String search;
     private VerificationStatus status;
     private String type;

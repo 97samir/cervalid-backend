@@ -7,21 +7,29 @@ import java.util.UUID;
 
 @Getter
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class VerificationHistoryResponse {
 
     private UUID publicId;
-    private String certificateNumber;
-    private UUID certificatePublicId;
 
+    /* Recurso verificado */
+    private String verificationType;
+
+    private UUID resourcePublicId;
+    private String resourceNumber;
+    private String resourceType;
+
+    /* Información académica */
     private String studentName;
     private String institutionName;
-    private String certificateType;
-    private String verificationReason;
 
+    /* Resultado de la verificación */
+    private String verificationReason;
     private String status;
     private String verificationSource;
+
+    /* Auditoría */
     private String ip;
     private LocalDateTime verifiedAt;
-
-
 }

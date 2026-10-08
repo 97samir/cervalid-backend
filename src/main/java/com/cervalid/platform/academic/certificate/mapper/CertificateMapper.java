@@ -18,6 +18,7 @@ public class CertificateMapper {
                 .status(certificate.getStatus())
                 .type(certificate.getType())
                 .title(certificate.getTitle())
+                .description(certificate.getDescription())
                 .awardedAt(certificate.getAwardedAt())
                 .hash(certificate.getCertificateHash())
                 .blockchainTxHash(certificate.getBlockchainTxHash())

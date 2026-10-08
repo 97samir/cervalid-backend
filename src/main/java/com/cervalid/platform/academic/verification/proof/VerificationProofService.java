@@ -12,11 +12,23 @@ public class VerificationProofService {
 
     private final HashService hashService;
 
-    public String generateProof(String certificateHash, String transcriptHash) {
+    public String generateProof(
+            String certificateHash,
+            String transcriptHash) {
 
         Map<String, Object> payload = Map.of(
                 "certificateHash", certificateHash,
                 "transcriptHash", transcriptHash
+        );
+
+        return hashService.sha256(payload);
+    }
+
+    public String generateCredentialProof(
+            String credentialHash) {
+
+        Map<String, Object> payload = Map.of(
+                "credentialHash", credentialHash
         );
 
         return hashService.sha256(payload);

@@ -84,6 +84,9 @@ public class CertificateSnapshotBuilder {
                                 "title",
                                 certificate.getTitle(),
 
+                                "description",
+                                certificate.getDescription(),
+
                                 "awardedAt",
                                 certificate.getAwardedAt(),
 

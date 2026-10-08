@@ -48,6 +48,10 @@ public class VerificationResponseMapper {
                 response.setCertificateType(certificate.getType().name());
             }
 
+            if (certificate.getTitle() != null) {
+                response.setTitle(certificate.getTitle());
+            }
+
             response.setDocumentHash(certificate.getDocumentHash());
             response.setDocumentUrl(certificate.getDocumentUrl());
 
@@ -64,32 +68,4 @@ public class VerificationResponseMapper {
         return response;
     }
 
-    /*
-    private VerificationLevel resolveLevel(
-            Certificate certificate,
-            VerificationRecord record) {
-
-        if (certificate == null) {
-            return VerificationLevel.LOCAL;
-        }
-
-        if (certificate.getStatus() ==
-                CertificateStatus.REVOKED) {
-
-            return VerificationLevel.LOCAL;
-        }
-
-        if (!record.isValid()) {
-            return VerificationLevel.LOCAL;
-        }
-
-        if (certificate.getBlockchainTxHash() != null &&
-                !certificate.getBlockchainTxHash().isBlank()) {
-
-            return VerificationLevel.BLOCKCHAIN_VALIDATED;
-        }
-
-        return VerificationLevel.HASH_VALIDATED;
-    }
-     */
 }

@@ -16,7 +16,6 @@ import java.util.UUID;
 public class CredentialDetailResponse {
 
     private UUID publicId;
-    private UUID studentPublicId;
     private String credentialNumber;
 
     private CredentialType type;
@@ -26,15 +25,12 @@ public class CredentialDetailResponse {
     private LocalDateTime issuedAt;
     private CredentialStatus status;
 
-    private String documentHash;
-    private String documentUrl;
+    private String verificationUrl;
 
-    private String blockchainTxHash;
-    private String blockchainNetwork;
-    private Long blockNumber;
-
-    private LocalDateTime anchoredAt;
-    private LocalDateTime revokedAt;
-
-    private String revocationReason;
+    private CredentialRecipientResponse recipient;
+    private CredentialIssuerResponse issuer;
+    private CredentialAcademicResponse academic;
+    private CredentialDocumentResponse document;
+    private CredentialIntegrityResponse integrity;
+    private CredentialRevocationResponse revocation;
 }

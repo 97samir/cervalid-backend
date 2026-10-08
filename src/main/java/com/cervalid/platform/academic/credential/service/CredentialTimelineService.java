@@ -1,6 +1,7 @@
 package com.cervalid.platform.academic.credential.service;
 
 import com.cervalid.platform.academic.credential.entity.Credential;
+import com.cervalid.platform.academic.credential.enums.CredentialType;
 import com.cervalid.platform.academic.student.entity.Student;
 import com.cervalid.platform.academic.timeline.enums.TimelineEventSource;
 import com.cervalid.platform.academic.timeline.enums.TimelineEventType;
@@ -53,15 +54,50 @@ public class CredentialTimelineService {
 
     private String buildIssuedDescription(
             Credential credential) {
-        return "Se otorgó oficialmente el título académico "
+
+        String typeLabel =
+                getCredentialTypeLabel(
+                        credential.getType()
+                );
+
+        return "Se otorgó oficialmente el "
+                + typeLabel
+                + " "
                 + credential.getTitle()
                 + ".";
     }
 
     private String buildRevokedDescription(
             Credential credential) {
-        return "El título académico "
+
+        String typeLabel =
+                getCredentialTypeLabel(
+                        credential.getType()
+                );
+
+        return "El "
+                + typeLabel
+                + " "
                 + credential.getTitle()
                 + " fue revocado.";
+    }
+
+    private String getCredentialTypeLabel(
+            CredentialType type) {
+
+        return switch (type) {
+
+            case BACHELOR_DEGREE ->
+                    "grado de bachiller";
+
+            case PROFESSIONAL_TITLE ->
+                    "título profesional";
+
+            case MASTER_DEGREE ->
+                    "grado de maestro";
+
+            case DOCTORATE ->
+                    "grado de doctor";
+        };
     }
 }

@@ -24,10 +24,24 @@ public interface CredentialRepository
             UUID publicId
     );
 
+    Optional<Credential> findByCredentialNumberAndVerificationHashAndDeletedFalse(
+            String credentialNumber,
+            String verificationHash
+    );
+
+    Optional<Credential> findByCredentialNumberAndDeletedFalse(
+            String credentialNumber
+    );
+
     Page<Credential> findAllByInstitutionIdAndStudentIdAndDeletedFalse(
             Long institutionId,
             Long studentId,
             Pageable pageable
+    );
+
+    boolean existsByInstitutionIdAndCredentialNumber(
+            Long institutionId,
+            String credentialNumber
     );
 
     boolean existsByInstitutionIdAndStudentIdAndTypeAndDeletedFalse(

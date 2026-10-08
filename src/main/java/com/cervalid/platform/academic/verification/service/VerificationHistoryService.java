@@ -3,6 +3,8 @@ package com.cervalid.platform.academic.verification.service;
 import com.cervalid.platform.academic.certificate.entity.Certificate;
 import com.cervalid.platform.academic.certificate.repository.CertificateRepository;
 import com.cervalid.platform.academic.certificate.service.CertificateQueryService;
+import com.cervalid.platform.academic.credential.entity.Credential;
+import com.cervalid.platform.academic.credential.repository.CredentialRepository;
 import com.cervalid.platform.academic.verification.dto.request.VerificationHistoryFilterRequest;
 import com.cervalid.platform.academic.verification.dto.response.VerificationHistoryResponse;
 import com.cervalid.platform.academic.verification.entity.VerificationRecord;
@@ -23,9 +25,9 @@ public class VerificationHistoryService {
 
     private final VerificationRecordRepository repository;
     private final CertificateRepository certificateRepository;
+    private final CredentialRepository credentialRepository;
     private final SecurityContextService securityContextService;
     private final VerificationHistoryMapper verificationHistoryMapper;
-    private final CertificateQueryService certificateQueryService;
     private final VerificationQueryService verificationQueryService;
 
     public Page<VerificationHistoryResponse> getByCertificate(
@@ -53,6 +55,33 @@ public class VerificationHistoryService {
                 .map(verificationHistoryMapper::toResponse);
     }
 
+    public Page<VerificationHistoryResponse> getByCredential(
+            UUID credentialPublicId,
+            Pageable pageable) {
+
+        Long institutionId =
+                securityContextService.getInstitutionId();
+
+        Credential credential =
+                credentialRepository
+                        .findByPublicIdAndInstitutionIdAndDeletedFalse(
+                                credentialPublicId,
+                                institutionId)
+                        .orElseThrow(() ->
+                                new RuntimeException(
+                                        "Credential not found")
+                        );
+
+        return repository
+                .findByCredentialIdAndInstitutionIdOrderByVerifiedAtDesc(
+                        credential.getId(),
+                        institutionId,
+                        pageable
+                )
+                .map(verificationQueryService::buildHistoryView)
+                .map(verificationHistoryMapper::toResponse);
+    }
+
     public Page<VerificationHistoryResponse> getByInstitution(
             Pageable pageable) {
 
@@ -74,24 +103,14 @@ public class VerificationHistoryService {
         Long institutionId =
                 securityContextService.getInstitutionId();
 
-        Long certificateId = null;
-
-        if (request.getCertificatePublicId() != null) {
-
-            certificateId =
-                    certificateQueryService
-                            .getCertificate(
-                                    request.getCertificatePublicId())
-                            .getId();
-        }
-
         return repository
                 .findAll(
                         VerificationSpecification.filter(
                                 request,
-                                institutionId,
-                                certificateId),
-                        pageable)
+                                institutionId
+                        ),
+                        pageable
+                )
                 .map(verificationQueryService::buildHistoryView)
                 .map(verificationHistoryMapper::toResponse);
     }

@@ -7,6 +7,7 @@ import com.cervalid.platform.academic.credential.dto.request.UpdateCredentialReq
 import com.cervalid.platform.academic.credential.dto.response.CredentialDetailResponse;
 import com.cervalid.platform.academic.credential.dto.response.CredentialDocumentResponse;
 import com.cervalid.platform.academic.credential.dto.response.CredentialResponse;
+import com.cervalid.platform.academic.credential.dto.response.CredentialVerificationResponse;
 import com.cervalid.platform.academic.credential.entity.Credential;
 import com.cervalid.platform.academic.credential.mapper.CredentialMapper;
 import com.cervalid.platform.academic.student.entity.Student;
@@ -29,7 +30,6 @@ public class CredentialService {
     private final CredentialMapper credentialMapper;
     private final StudentRepository studentRepository;
 
-    @Transactional
     public CredentialResponse create(
             Long institutionId,
             UUID studentPublicId,
@@ -61,7 +61,6 @@ public class CredentialService {
         );
     }
 
-    @Transactional
     public CredentialResponse update(
             Long institutionId,
             UUID publicId,
@@ -87,7 +86,6 @@ public class CredentialService {
         );
     }
 
-    @Transactional
     public CredentialResponse issue(
             Long institutionId,
             UUID publicId
@@ -111,7 +109,6 @@ public class CredentialService {
         );
     }
 
-    @Transactional
     public CredentialResponse revoke(
             Long institutionId,
             UUID publicId,
@@ -137,7 +134,6 @@ public class CredentialService {
         );
     }
 
-    @Transactional(readOnly = true)
     public CredentialDetailResponse getByPublicId(
             Long institutionId,
             UUID publicId
@@ -149,7 +145,6 @@ public class CredentialService {
         );
     }
 
-    @Transactional(readOnly = true)
     public Page<CredentialResponse> getByStudent(
             Long institutionId,
             UUID studentPublicId,
@@ -163,7 +158,6 @@ public class CredentialService {
         );
     }
 
-    @Transactional(readOnly = true)
     public Page<CredentialResponse> search(
             Long institutionId,
             CredentialFilterRequest filter,
@@ -177,7 +171,6 @@ public class CredentialService {
         );
     }
 
-    @Transactional(readOnly = true)
     public Credential getEntity(
             Long institutionId,
             UUID publicId
@@ -221,5 +214,13 @@ public class CredentialService {
                 documentHash,
                 documentUrl
         );
+    }
+
+    public CredentialVerificationResponse getVerificationByPublicId(
+            UUID publicId
+    ) {
+
+        return credentialQueryService
+                .getVerificationByPublicId(publicId);
     }
 }

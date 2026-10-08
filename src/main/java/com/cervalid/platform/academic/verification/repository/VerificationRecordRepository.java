@@ -64,4 +64,27 @@ public interface VerificationRecordRepository
             Long certificateId,
             VerificationStatus status);
 
+    // ======= credential ==========
+    Page<VerificationRecord> findByCredentialIdAndInstitutionIdOrderByVerifiedAtDesc(
+            Long credentialId,
+            Long institutionId,
+            Pageable pageable);
+
+    long countDistinctByInstitutionIdAndCredentialIdNotNull(
+            Long institutionId
+    );
+
+    long countByCredentialId(
+            Long credentialId
+    );
+
+    VerificationRecord findFirstByCredentialIdOrderByVerifiedAtDesc(
+            Long credentialId
+    );
+
+    long countByCredentialIdAndStatus(
+            Long credentialId,
+            VerificationStatus status
+    );
+
 }

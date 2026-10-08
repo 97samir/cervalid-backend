@@ -1,17 +1,18 @@
 package com.cervalid.platform.academic.credential.service;
 
+import com.cervalid.platform.shared.hashing.HashService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-
 @Service
+@RequiredArgsConstructor
 public class CredentialDocumentValidationService {
 
     private static final String SHA256_REGEX =
-            "^[a-fA-F0-9]{64}$";
+            "^0x[a-fA-F0-9]{64}$";
+
+    private final HashService hashService;
 
     public String validateAndResolveHash(
             MultipartFile file,
@@ -26,7 +27,7 @@ public class CredentialDocumentValidationService {
                 documentHash != null
                         && !documentHash.isBlank();
 
-        //No se está actualizando el hash.
+        // No se está actualizando el hash.
         // Esto permite actualizar solamente la URL.
         if (!hasFile && !hasHash) {
             return null;
@@ -35,7 +36,7 @@ public class CredentialDocumentValidationService {
         if (hasHash) {
 
             String normalizedHash =
-                    documentHash.trim().toLowerCase();
+                    hashService.normalizeHash(documentHash);
 
             if (!normalizedHash.matches(SHA256_REGEX)) {
                 throw new IllegalArgumentException(
@@ -46,7 +47,8 @@ public class CredentialDocumentValidationService {
             documentHash = normalizedHash;
         }
 
-        // Si se proporciona un PDF, el hash se genera automáticamente.
+        // Si se proporciona un PDF,
+        // el hash se genera automáticamente.
         if (hasFile) {
 
             validatePdf(file);
@@ -54,8 +56,8 @@ public class CredentialDocumentValidationService {
             String generatedHash =
                     generateSha256(file);
 
-            // Si  se proporcionó un hash manual,
-            // comprobamos que corresponda al PDF
+            // Si se proporcionó un hash manual,
+            // comprobamos que corresponda al PDF.
             if (hasHash) {
 
                 if (!generatedHash.equals(documentHash)) {
@@ -95,27 +97,11 @@ public class CredentialDocumentValidationService {
 
         try {
 
-            MessageDigest digest =
-                    MessageDigest.getInstance("SHA-256");
+            return hashService.hashFile(
+                    file.getBytes()
+            );
 
-            byte[] hash =
-                    digest.digest(file.getBytes());
-
-            StringBuilder result =
-                    new StringBuilder();
-
-            for (byte b : hash) {
-
-                result.append(
-                        String.format("%02x", b)
-                );
-            }
-
-            return result.toString();
-
-        } catch (
-                NoSuchAlgorithmException | IOException e
-        ) {
+        } catch (Exception e) {
 
             throw new IllegalStateException(
                     "No fue posible generar el hash del documento.",

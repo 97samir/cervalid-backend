@@ -23,13 +23,6 @@ public class CertificateBlockchainService {
             Certificate certificate) {
 
         try {
-            /*
-            String verificationHash = verificationProofService
-                    .generateProof(
-                            certificate.getCertificateHash(),
-                            certificate.getTranscriptHash()
-                    );
-            */
 
             BlockchainCertificatePayload payload =
                     new BlockchainCertificatePayload();
@@ -38,7 +31,6 @@ public class CertificateBlockchainService {
             payload.setCertificateNumber(certificate.getCertificateNumber());
             payload.setCertificateHash(certificate.getCertificateHash());
             payload.setTranscriptHash(certificate.getTranscriptHash());
-            //payload.setVerificationHash(verificationHash);
             payload.setVerificationHash(certificate.getVerificationHash());
             payload.setStudentId(certificate.getStudentId());
             payload.setInstitutionId(certificate.getInstitutionId());

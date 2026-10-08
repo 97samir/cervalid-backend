@@ -11,5 +11,6 @@ import java.time.LocalDate;
 public class UpdateCertificateCredentialRequest {
 
     private String title;
+    private String description;
     private LocalDate awardedAt;
 }

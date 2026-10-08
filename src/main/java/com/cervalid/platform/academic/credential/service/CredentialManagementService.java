@@ -27,13 +27,15 @@ public class CredentialManagementService {
     private final CredentialTimelineService credentialTimelineService;
     private final CredentialNumberGenerator credentialNumberGenerator;
     private final CredentialDocumentValidationService documentValidationService;
+    private final CredentialHashService credentialHashService;
+    private final CredentialVerificationHashService credentialVerificationHashService;
+    private final CredentialVerificationUrlBuilder credentialVerificationUrlBuilder;
 
     @Transactional
     public Credential create(
             Long institutionId,
             UUID studentPublicId,
-            CreateCredentialRequest request
-    ) {
+            CreateCredentialRequest request) {
 
         Student student = studentRepository
                 .findByPublicIdAndInstitutionId(
@@ -50,7 +52,7 @@ public class CredentialManagementService {
                 request
         );
 
-        String credentialNumber = credentialNumberGenerator.generate();
+        String credentialNumber = generateCredentialNumber(institutionId);
 
         Credential credential = Credential.builder()
                 .institutionId(institutionId)
@@ -95,23 +97,39 @@ public class CredentialManagementService {
     @Transactional
     public Credential issue(
             Long institutionId,
-            UUID publicId
-    ) {
+            UUID publicId) {
 
-        Credential credential =
-                getCredential(institutionId, publicId);
+        Credential credential = getCredential(
+                institutionId,
+                publicId
+        );
 
         credentialValidationService.validateIssue(credential);
+
         credential.setStatus(CredentialStatus.ISSUED);
         credential.setIssuedAt(LocalDateTime.now());
 
-        Credential issuedCredential =
-                credentialRepository.save(credential);
+        String credentialHash = credentialHashService
+                .generateCredentialHash(credential);
 
-        Student student =
-                getStudent(
-                        institutionId,
-                        credential.getStudentId()
+        credential.setCredentialHash(credentialHash);
+
+        String verificationHash = credentialVerificationHashService
+                .generateVerificationHash(credentialHash);
+
+        credential.setVerificationHash(verificationHash);
+
+        String verificationUrl = credentialVerificationUrlBuilder
+                .build(credential.getPublicId());
+
+        credential.setVerificationUrl(verificationUrl);
+
+        Credential issuedCredential = credentialRepository
+                .save(credential);
+
+        Student student = getStudent(
+                institutionId,
+                credential.getStudentId()
                 );
 
         credentialTimelineService.credentialIssued(
@@ -235,5 +253,25 @@ public class CredentialManagementService {
                 .documentHash(saved.getDocumentHash())
                 .documentUrl(saved.getDocumentUrl())
                 .build();
+    }
+
+    private String generateCredentialNumber(
+            Long institutionId) {
+
+        String credentialNumber;
+
+        do {
+            credentialNumber =
+                    credentialNumberGenerator.generate();
+
+        } while (
+                credentialRepository
+                        .existsByInstitutionIdAndCredentialNumber(
+                                institutionId,
+                                credentialNumber
+                        )
+        );
+
+        return credentialNumber;
     }
 }

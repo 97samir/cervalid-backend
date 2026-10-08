@@ -30,8 +30,9 @@ public class CertificateController {
     @PostMapping("/transcripts/{transcriptPublicId}")
     public ResponseEntity<CertificateResponse> issueFromTranscript(
             @PathVariable UUID transcriptPublicId,
-            @RequestBody(required = false)
-            IssueCertificateRequest request) {
+            @Valid @RequestBody IssueCertificateRequest request){
+            //@RequestBody(required = false)
+            //IssueCertificateRequest request) {
 
         return ResponseEntity.ok(
                 certificateService.issueFromTranscript(
@@ -43,8 +44,10 @@ public class CertificateController {
     // CREA - INTERNAL ORCHESTRATION ENDPOINT
     @PostMapping
     public ResponseEntity<CertificateResponse> issue(
-            @RequestBody IssueCertificateRequest request) {
-        return ResponseEntity.ok(certificateService.issue(request));
+            @Valid @RequestBody IssueCertificateRequest request) {
+
+        return ResponseEntity.ok(
+                certificateService.issue(request));
     }
 
     // certificado por estudiante
@@ -140,7 +143,7 @@ public class CertificateController {
             consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<CertificateResponse> updateCredential(
             @PathVariable UUID publicId,
-            @RequestBody UpdateCertificateCredentialRequest request) {
+            @Valid @RequestBody UpdateCertificateCredentialRequest request) {
 
         return ResponseEntity.ok(
                 certificateService.updateCredential(

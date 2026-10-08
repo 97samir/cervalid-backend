@@ -48,21 +48,6 @@ public class CredentialController {
                 );
     }
 
-    @GetMapping("/{publicId}")
-    public ResponseEntity<CredentialDetailResponse> getByPublicId(
-            @PathVariable UUID publicId) {
-
-        Long institutionId =
-                securityContextService.getInstitutionId();
-
-        return ResponseEntity.ok(
-                credentialService.getByPublicId(
-                        institutionId,
-                        publicId
-                )
-        );
-    }
-
     @GetMapping("/students/{studentPublicId}")
     public ResponseEntity<Page<CredentialResponse>> getByStudent(
             @PathVariable UUID studentPublicId,
@@ -97,6 +82,21 @@ public class CredentialController {
         );
     }
 
+    @GetMapping("/{publicId}")
+    public ResponseEntity<CredentialDetailResponse> getByPublicId(
+            @PathVariable UUID publicId) {
+
+        Long institutionId =
+                securityContextService.getInstitutionId();
+
+        return ResponseEntity.ok(
+                credentialService.getByPublicId(
+                        institutionId,
+                        publicId
+                )
+        );
+    }
+
     @PutMapping("/{publicId}")
     public ResponseEntity<CredentialResponse> update(
             @PathVariable UUID publicId,
@@ -121,10 +121,11 @@ public class CredentialController {
         Long institutionId =
                 securityContextService.getInstitutionId();
 
-        return ResponseEntity.ok(credentialService
-                .issue(
+        return ResponseEntity.ok(
+                credentialService.issue(
                         institutionId,
-                        publicId)
+                        publicId
+                )
         );
     }
 
@@ -145,10 +146,11 @@ public class CredentialController {
         );
     }
 
-    @PutMapping(value = "/{publicId}/document",
-            consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PutMapping(
+            value = "/{publicId}/document",
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE
+    )
     public ResponseEntity<CredentialDocumentResponse> updateDocument(
-
             @PathVariable UUID publicId,
             @RequestPart(value = "file", required = false)
             MultipartFile file,

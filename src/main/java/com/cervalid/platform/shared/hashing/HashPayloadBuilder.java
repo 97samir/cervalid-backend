@@ -30,6 +30,7 @@ public class HashPayloadBuilder {
             String certificateNumber,
             String transcriptHash,
             String title,
+            String description,
             String awardedAt,
             String issuedAt) {
 
@@ -39,6 +40,28 @@ public class HashPayloadBuilder {
                 "institutionId", institutionId,
                 "certificateNumber", certificateNumber,
                 "transcriptHash", transcriptHash,
+                "title", title,
+                "description", description,
+                "awardedAt", awardedAt,
+                "issuedAt", issuedAt
+        );
+    }
+
+    public Map<String, Object> buildCredentialHashPayload(
+            Long studentId,
+            Long institutionId,
+            String credentialNumber,
+            String type,
+            String title,
+            String awardedAt,
+            String issuedAt) {
+
+        return Map.of(
+                "type", "CREDENTIAL",
+                "studentId", studentId,
+                "institutionId", institutionId,
+                "credentialNumber", credentialNumber,
+                "credentialType", type,
                 "title", title,
                 "awardedAt", awardedAt,
                 "issuedAt", issuedAt

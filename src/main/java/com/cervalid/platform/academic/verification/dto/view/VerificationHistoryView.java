@@ -11,14 +11,24 @@ import java.util.UUID;
 public class VerificationHistoryView {
 
     private UUID publicId;
-    private UUID certificatePublicId;
-    private String certificateNumber;
-    private String certificateType;
+
+    /* Recurso verificado */
+    private String verificationType;
+
+    private UUID resourcePublicId;
+    private String resourceNumber;
+    private String resourceType;
+
+    /* Información académica */
     private String studentName;
     private String institutionName;
+
+    /* Resultado de la verificación */
     private String verificationReason;
     private String status;
     private String verificationSource;
+
+    /* Auditoría */
     private String ip;
     private LocalDateTime verifiedAt;
 }

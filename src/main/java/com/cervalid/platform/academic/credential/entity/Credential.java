@@ -12,11 +12,20 @@ import java.util.UUID;
 @Entity
 @Table(
         name = "academic_credentials",
+
+        // numero de credencial unico solo en la institucion
+        uniqueConstraints = {@UniqueConstraint(
+                name = "uk_credential_institution_number",
+                columnNames = {"institution_id", "credential_number"}
+                )
+        },
         indexes = {
                 @Index(name = "idx_credential_public_id", columnList = "public_id"),
                 @Index(name = "idx_credential_institution_id", columnList = "institution_id"),
                 @Index(name = "idx_credential_student_id", columnList = "student_id"),
-                @Index(name = "idx_credential_status", columnList = "status")
+                @Index(name = "idx_credential_status", columnList = "status"),
+                @Index(name = "idx_credential_type", columnList = "type"),
+                @Index(name = "idx_credential_awarded_at", columnList = "awarded_at")
         }
 )
 @Getter
@@ -39,7 +48,7 @@ public class Credential {
     @Column(name = "student_id", nullable = false)
     private Long studentId;
 
-    @Column(name = "credential_number", nullable = false, unique = true, length = 30)
+    @Column(name = "credential_number", nullable = false, length = 30)
     private String credentialNumber;
 
     @Enumerated(EnumType.STRING)
@@ -61,6 +70,15 @@ public class Credential {
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 20)
     private CredentialStatus status;
+
+    @Column(name = "credential_hash", length = 128)
+    private String credentialHash;
+
+    @Column(name = "verification_hash", length = 128)
+    private String verificationHash;
+
+    @Column(name = "verification_url", length = 500)
+    private String verificationUrl;
 
     @Column(name = "document_hash", length = 128)
     private String documentHash;

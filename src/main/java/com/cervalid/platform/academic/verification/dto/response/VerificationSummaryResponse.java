@@ -1,4 +1,4 @@
-package com.cervalid.platform.academic.verification.dto.view;
+package com.cervalid.platform.academic.verification.dto.response;
 
 import com.cervalid.platform.academic.verification.enums.VerificationStatus;
 import lombok.Builder;
@@ -9,14 +9,19 @@ import java.util.UUID;
 
 @Getter
 @Builder
-public class VerificationCertificateSummaryView {
+public class VerificationSummaryResponse {
 
-    private UUID certificatePublicId;
-    private String certificateNumber;
+    private UUID resourcePublicId;
+    private String verificationType;
+
+    private String resourceNumber;
+    private String resourceType;
+
     private String studentName;
     private String institutionName;
-    private String certificateType;
+
     private long verificationCount;
+
     private LocalDateTime lastVerifiedAt;
     private VerificationStatus lastStatus;
 }

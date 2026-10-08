@@ -8,7 +8,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -26,6 +25,17 @@ public class VerificationHistoryController {
         return verificationHistoryService.getByCertificate(
                 certificatePublicId,
                 pageable);
+    }
+
+    @GetMapping("/credential/{credentialPublicId}")
+    public Page<VerificationHistoryResponse> byCredential(
+            @PathVariable UUID credentialPublicId,
+            Pageable pageable) {
+
+        return verificationHistoryService.getByCredential(
+                credentialPublicId,
+                pageable
+        );
     }
 
     @GetMapping("/institution")

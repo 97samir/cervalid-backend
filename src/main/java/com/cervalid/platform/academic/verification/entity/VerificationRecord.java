@@ -1,6 +1,7 @@
 package com.cervalid.platform.academic.verification.entity;
 
 import com.cervalid.platform.academic.certificate.entity.Certificate;
+import com.cervalid.platform.academic.credential.entity.Credential;
 import com.cervalid.platform.academic.verification.enums.VerificationSource;
 import com.cervalid.platform.academic.verification.enums.VerificationStatus;
 import jakarta.persistence.*;
@@ -10,7 +11,7 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(name = "academic_verifications_certificate")
+@Table(name = "academic_verifications")
 @Getter
 @Setter
 @Builder
@@ -24,18 +25,23 @@ public class VerificationRecord {
 
     private UUID publicId;
 
+    @Column(name = "credential_id")
+    private Long credentialId;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "credential_id", referencedColumnName = "id",
+            insertable = false, updatable = false)
+    private Credential credential;
+
     @Column(name = "certificate_id")
     private Long certificateId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(
-            name = "certificate_id",
-            referencedColumnName = "id",
-            insertable = false,
-            updatable = false
-    )
+    @JoinColumn(name = "certificate_id", referencedColumnName = "id",
+            insertable = false, updatable = false)
     private Certificate certificate;
 
+    private String credentialNumber;
     private String certificateNumber;
     private Long institutionId;
     private String providedHash;

@@ -21,6 +21,7 @@ public class CertificateBuilderService {
             Transcript transcript,
             CertificateType type,
             String title,
+            String description,
             LocalDate awardedAt,
             String documentHash,
             String documentUrl) {
@@ -34,6 +35,7 @@ public class CertificateBuilderService {
                 .transcriptId(transcript.getId())
                 .transcriptHash(transcript.getTranscriptHash())
                 .type(type)
+                .description(description)
                 .title(title)
                 .awardedAt(awardedAt)
                 .status(CertificateStatus.ISSUED)

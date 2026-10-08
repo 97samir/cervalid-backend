@@ -10,9 +10,10 @@ import java.util.UUID;
 @Setter
 public class VerificationHistoryFilterRequest {
 
-    private UUID certificatePublicId;
+    private String verificationType;
+    private UUID resourcePublicId;
     private VerificationStatus status;
-    private String search; // numero de certificado
+    private String search;
     private LocalDate fromDate;
     private LocalDate toDate;
 }

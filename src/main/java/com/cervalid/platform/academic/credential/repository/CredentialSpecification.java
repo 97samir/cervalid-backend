@@ -1,6 +1,5 @@
 package com.cervalid.platform.academic.credential.repository;
 
-import com.cervalid.platform.academic.credential.entity.Credential;
 import com.cervalid.platform.academic.credential.dto.filter.CredentialFilterRequest;
 import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.jpa.domain.Specification;
@@ -13,10 +12,12 @@ public final class CredentialSpecification {
     private CredentialSpecification() {
     }
 
-    public static Specification<Credential> withFilters(
+    public static Specification<com.cervalid.platform.academic.credential.entity.Credential> withFilters(
             Long institutionId,
-            CredentialFilterRequest filter
+            CredentialFilterRequest filter,
+            Long studentId
     ) {
+
         return (root, query, criteriaBuilder) -> {
 
             List<Predicate> predicates = new ArrayList<>();
@@ -34,18 +35,18 @@ public final class CredentialSpecification {
                     )
             );
 
-            if (filter == null) {
-                return criteriaBuilder.and(
-                        predicates.toArray(new Predicate[0])
-                );
-            }
-
-            if (filter.getStudentId() != null) {
+            if (studentId != null) {
                 predicates.add(
                         criteriaBuilder.equal(
                                 root.get("studentId"),
-                                filter.getStudentId()
+                                studentId
                         )
+                );
+            }
+
+            if (filter == null) {
+                return criteriaBuilder.and(
+                        predicates.toArray(new Predicate[0])
                 );
             }
 

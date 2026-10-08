@@ -23,6 +23,7 @@ public class CertificateResponse {
     private CertificateType type;
 
     private String title;
+    private String description;
     private LocalDate awardedAt;
 
     private String hash;
