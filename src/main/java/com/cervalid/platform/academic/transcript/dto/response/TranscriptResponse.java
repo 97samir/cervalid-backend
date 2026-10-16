@@ -4,6 +4,7 @@ import com.cervalid.platform.academic.transcript.enums.AcademicPeriodType;
 import lombok.*;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Data
@@ -25,4 +26,7 @@ public class TranscriptResponse {
     private BigDecimal gpa;
     private Integer creditsEarned;
     private Integer creditsFailed;
+
+    private LocalDateTime issuedAt;
+    private LocalDateTime createdAt;
 }

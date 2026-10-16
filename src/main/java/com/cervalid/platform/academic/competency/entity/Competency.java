@@ -4,6 +4,7 @@ import com.cervalid.platform.academic.competency.enums.CompetencyEvidenceType;
 import com.cervalid.platform.academic.competency.enums.CompetencyLevel;
 import com.cervalid.platform.academic.competency.enums.CompetencySource;
 import com.cervalid.platform.academic.competency.enums.CompetencyStatus;
+import com.cervalid.platform.audit.entity.AuditableEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -17,7 +18,7 @@ import java.util.UUID;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class Competency {
+public class Competency extends AuditableEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

@@ -1,5 +1,8 @@
 package com.cervalid.platform.institution.service;
 
+import com.cervalid.platform.academic.certificate.repository.CertificateRepository;
+import com.cervalid.platform.academic.credential.repository.CredentialRepository;
+import com.cervalid.platform.academic.verification.repository.VerificationRecordRepository;
 import com.cervalid.platform.audit.annotation.Auditable;
 import com.cervalid.platform.common.enums.RoleName;
 import com.cervalid.platform.institution.dto.*;
@@ -21,6 +24,9 @@ public class InstitutionService {
 
     private final InstitutionRepository institutionRepository;
     private final InstitutionUserRepository institutionUserRepository;
+    private final CertificateRepository certificateRepository;
+    private final CredentialRepository credentialRepository;
+    private final VerificationRecordRepository verificationRecordRepository;
 
     @Auditable(action = "CREATE", resource = "INSTITUTION")
 
@@ -91,28 +97,37 @@ public class InstitutionService {
         }
 
         long totalUsers =
-                institutionUserRepository.countByInstitutionIdAndActiveTrue(institutionId);
+                institutionUserRepository.countByInstitutionIdAndActiveTrue(
+                        institutionId);
 
         long totalStudents =
                 institutionUserRepository.countByInstitutionIdAndRole_NameAndActiveTrue(
-                        institutionId, RoleName.STUDENT
-                );
+                        institutionId, RoleName.STUDENT);
 
         long totalAdmins =
                 institutionUserRepository.countByInstitutionAndRoles(
                         institutionId,
-                        List.of(
-                                RoleName.INSTITUTION_ADMIN,
-                                RoleName.INSTITUTION_SUBADMIN
-                        )
-                );
+                        List.of(RoleName.INSTITUTION_ADMIN,
+                                RoleName.INSTITUTION_SUBADMIN));
+
+        long totalCertificates =
+                certificateRepository.countByInstitutionId(institutionId);
+
+        long totalCredentials =
+                credentialRepository
+                        .countByInstitutionIdAndDeletedFalse(institutionId);
+
+        long totalVerifications =
+                verificationRecordRepository
+                        .countByInstitutionId(institutionId);
 
         return DashboardStatsResponse.builder()
                 .totalUsers(totalUsers)
                 .totalStudents(totalStudents)
                 .totalAdmins(totalAdmins)
-                .totalCertificates(0L) // futuro
-                .totalVerified(0L)     // futuro
+                .totalCertificates(totalCertificates)
+                .totalCredentials(totalCredentials)
+                .totalVerifications(totalVerifications)
                 .build();
     }
 

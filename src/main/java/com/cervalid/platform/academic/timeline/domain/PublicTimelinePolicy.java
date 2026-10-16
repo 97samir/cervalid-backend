@@ -25,7 +25,7 @@ public class PublicTimelinePolicy {
 
                     TimelineEventType.SKILL_EARNED,
                     TimelineEventType.COMPETENCY_ACQUIRED,
-                    //TimelineEventType.COMPETENCY_CREATED,
+                    TimelineEventType.COMPETENCY_CREATED,
                     //TimelineEventType.COMPETENCY_UPDATED,
 
                     TimelineEventType.ACHIEVEMENT_EARNED,

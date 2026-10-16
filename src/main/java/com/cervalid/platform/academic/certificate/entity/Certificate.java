@@ -2,6 +2,7 @@ package com.cervalid.platform.academic.certificate.entity;
 
 import com.cervalid.platform.academic.certificate.enums.CertificateStatus;
 import com.cervalid.platform.academic.certificate.enums.CertificateType;
+import com.cervalid.platform.audit.entity.AuditableEntity;
 import com.fasterxml.jackson.databind.JsonNode;
 import jakarta.persistence.*;
 import lombok.*;
@@ -19,7 +20,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Certificate {
+public class Certificate extends AuditableEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

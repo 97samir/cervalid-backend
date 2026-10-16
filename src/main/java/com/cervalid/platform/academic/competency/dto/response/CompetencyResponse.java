@@ -27,4 +27,6 @@ public class CompetencyResponse {
     private UUID evidenceReference;
     private CompetencyEvidenceType evidenceType;
     private String academicPeriod;
+
+    private LocalDateTime createdAt;
 }

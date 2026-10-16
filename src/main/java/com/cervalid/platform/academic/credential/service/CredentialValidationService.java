@@ -4,6 +4,7 @@ import com.cervalid.platform.academic.credential.dto.request.CreateCredentialReq
 import com.cervalid.platform.academic.credential.dto.request.UpdateCredentialRequest;
 import com.cervalid.platform.academic.credential.entity.Credential;
 import com.cervalid.platform.academic.credential.enums.CredentialStatus;
+import com.cervalid.platform.academic.credential.enums.CredentialType;
 import com.cervalid.platform.academic.credential.repository.CredentialRepository;
 import com.cervalid.platform.academic.student.entity.Student;
 import lombok.RequiredArgsConstructor;
@@ -17,28 +18,7 @@ public class CredentialValidationService {
 
     private final CredentialRepository credentialRepository;
 
-    /* Valida que el estudiante pueda recibir este tipo de credential */
-    public void validateCredentialUniqueness(
-            Long institutionId,
-            Long studentId,
-            com.cervalid.platform.academic.credential.enums.CredentialType type
-    ) {
-        boolean exists =
-                credentialRepository
-                        .existsByInstitutionIdAndStudentIdAndTypeAndDeletedFalse(
-                                institutionId,
-                                studentId,
-                                type
-                        );
-
-        if (exists) {
-            throw new IllegalArgumentException(
-                    "El estudiante ya posee un credential de este tipo"
-            );
-        }
-    }
-
-    /* Valida los datos de creación */
+    // Valida los datos de creación
     public void validateCreate(
             Long institutionId,
             Student student,
@@ -53,11 +33,6 @@ public class CredentialValidationService {
                 request.getAwardedAt()
         );
 
-        validateCredentialUniqueness(
-                institutionId,
-                student.getId(),
-                request.getType()
-        );
     }
 
     /* Valida los datos de actualización */

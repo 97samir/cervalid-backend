@@ -2,6 +2,7 @@ package com.cervalid.platform.academic.transcript.entity;
 
 import com.cervalid.platform.academic.transcript.enums.AcademicPeriodType;
 import com.cervalid.platform.academic.transcript.enums.TranscriptStatus;
+import com.cervalid.platform.audit.entity.AuditableEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -15,7 +16,7 @@ import java.util.UUID;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class Transcript {
+public class Transcript extends AuditableEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

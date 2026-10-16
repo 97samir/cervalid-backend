@@ -25,4 +25,5 @@ public class CredentialResponse {
     private LocalDateTime issuedAt;
     private CredentialStatus status;
     private LocalDateTime revokedAt;
+    private LocalDateTime createdAt;
 }

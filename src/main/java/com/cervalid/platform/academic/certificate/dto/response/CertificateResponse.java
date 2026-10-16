@@ -26,7 +26,7 @@ public class CertificateResponse {
     private String description;
     private LocalDate awardedAt;
 
-    private String hash;
+    private String certificateHash;
     private String blockchainTxHash;
     private String verificationHash;
     private String verificationUrl;
@@ -38,4 +38,5 @@ public class CertificateResponse {
 
     private LocalDateTime issuedAt;
     private LocalDateTime revokedAt;
+    private LocalDateTime createdAt;
 }

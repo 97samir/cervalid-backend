@@ -20,8 +20,6 @@ public enum TimelineEventType {
     CERTIFICATE_ISSUED, // emitido
     CERTIFICATE_REVOKED,
 
-    CREDENTIAL_UPDATED, // certificado
-
     SKILL_EARNED, // habilidad obtenida
     COMPETENCY_ACQUIRED, // ADQUIRIDA
     COMPETENCY_CREATED, // para registros manuales
@@ -34,6 +32,7 @@ public enum TimelineEventType {
 
     CREDENTIAL_ISSUED,
     CREDENTIAL_REVOKED,
+    CREDENTIAL_UPDATED, // certificado
 
     BADGE_GRANTED, // insignia otorgada
 

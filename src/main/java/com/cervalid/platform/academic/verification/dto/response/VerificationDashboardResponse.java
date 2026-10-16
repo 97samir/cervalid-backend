@@ -10,6 +10,7 @@ public class VerificationDashboardResponse {
     // general
     private long totalVerifications;
     private long uniqueCertificates;
+    private long uniqueCredentials;
 
     // Time
     private long today;

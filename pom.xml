@@ -114,18 +114,11 @@
 			<artifactId>spring-boot-starter-webflux</artifactId>
 		</dependency>
 
-		<!-- Web3j
-		<dependency>
-			<groupId>org.web3j</groupId>
-			<artifactId>web3j-spring-boot-starter</artifactId>
-			<version>1.6.0</version>
-		</dependency>
-		-->
-
+		<!-- Web3j-->
 		<dependency>
 			<groupId>org.web3j</groupId>
 			<artifactId>core</artifactId>
-			<version>4.10.3</version>
+			<version>4.14.0</version>
 		</dependency>
 
 		<!-- Para firmar transacciones -->

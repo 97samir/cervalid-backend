@@ -16,6 +16,7 @@ public class TranscriptItemMapper {
                 .courseName(item.getCourseName())
                 .credits(item.getCredits())
                 .grade(item.getGrade())
+                .createdAt(item.getCreatedAt())
                 .build();
     }
 }

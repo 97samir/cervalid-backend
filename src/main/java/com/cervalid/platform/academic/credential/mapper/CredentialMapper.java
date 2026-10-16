@@ -27,6 +27,7 @@ public class CredentialMapper {
                 .issuedAt(credential.getIssuedAt())
                 .status(credential.getStatus())
                 .revokedAt(credential.getRevokedAt())
+                .createdAt(credential.getCreatedAt())
                 .build();
     }
 

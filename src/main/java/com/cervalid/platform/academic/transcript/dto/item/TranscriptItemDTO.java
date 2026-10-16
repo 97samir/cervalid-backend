@@ -3,6 +3,7 @@ package com.cervalid.platform.academic.transcript.dto.item;
 import lombok.*;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Data
@@ -18,6 +19,7 @@ public class TranscriptItemDTO {
     private Integer credits;
     private BigDecimal grade;
 
+    private LocalDateTime createdAt;
     // mas adelante
     //private String term; // 2026-I
 }

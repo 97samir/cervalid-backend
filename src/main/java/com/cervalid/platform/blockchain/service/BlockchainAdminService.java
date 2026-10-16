@@ -1,70 +1,106 @@
 package com.cervalid.platform.blockchain.service;
 
-import com.cervalid.platform.blockchain.contract.CertificateRegistry;
+import com.cervalid.platform.blockchain.contract.DocumentRegistry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.web3j.crypto.Credentials;
-import org.web3j.protocol.Web3j;
-import org.web3j.tx.gas.DefaultGasProvider;
+import org.web3j.protocol.core.methods.response.TransactionReceipt;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class BlockchainAdminService {
 
-    private final Web3j web3j;
-    private final Credentials credentials;
-
-    @Value("${blockchain.contract-address}")
-    private String contractAddress;
-
-    private CertificateRegistry loadContract() {
-
-        return CertificateRegistry.load(
-                contractAddress,
-                web3j,
-                credentials,
-                new DefaultGasProvider()
-        );
-    }
+    private final BlockchainContractFactory blockchainContractFactory;
 
     public String registerInstitution(String walletAddress) {
-
         try {
-            CertificateRegistry contract = loadContract();
-            log.info("REGISTERING INSTITUTION: {}", walletAddress);
-            var receipt = contract
+            validateWalletAddress(walletAddress);
+
+            DocumentRegistry contract =
+                    blockchainContractFactory.loadDocumentRegistry();
+
+            log.info(
+                    "Registrando institución en DocumentRegistry: {}",
+                    walletAddress
+            );
+
+            TransactionReceipt receipt = contract
                     .addInstitution(walletAddress)
                     .send();
-            // validar estado blockchain
-            if (!receipt.isStatusOK()) {
-                throw new RuntimeException("Blockchain transaction failed");
-            }
+
+            validateReceipt(receipt, "registrar la institución");
 
             String txHash = receipt.getTransactionHash();
 
-            log.info("Institution registered on blockchain. TX: {}",
-                    receipt.getTransactionHash()
+            log.info(
+                    "Institución registrada en blockchain. TX: {}",
+                    txHash
             );
 
-            return  txHash;
+            return txHash;
 
         } catch (Exception e) {
-            throw new RuntimeException("Error registering institution on blockchain", e);
+            log.error(
+                    "Error al registrar la institución en blockchain: {}",
+                    walletAddress,
+                    e
+            );
+
+            throw new RuntimeException(
+                    "Error al registrar la institución en blockchain",
+                    e
+            );
         }
     }
 
     public boolean isInstitution(String walletAddress) {
         try {
-            log.info("CHECKING WALLET: {}", walletAddress);
-            CertificateRegistry contract = loadContract();
-            log.info("CONTRACT: {}", contract.getContractAddress());
-            return contract.isInstitution(walletAddress).send();
+            validateWalletAddress(walletAddress);
+
+            DocumentRegistry contract =
+                    blockchainContractFactory.loadDocumentRegistry();
+
+            return Boolean.TRUE.equals(
+                    contract.isInstitution(walletAddress).send()
+            );
 
         } catch (Exception e) {
-            throw new RuntimeException("Error checking institution role", e);
+            log.error(
+                    "Error al comprobar el rol de institución: {}",
+                    walletAddress,
+                    e
+            );
+
+            throw new RuntimeException(
+                    "Error al comprobar el rol de institución en blockchain",
+                    e
+            );
+        }
+    }
+
+    private void validateWalletAddress(String walletAddress) {
+        if (walletAddress == null
+                || !walletAddress.matches("0x[a-fA-F0-9]{40}")) {
+            throw new IllegalArgumentException(
+                    "La dirección de wallet no es válida"
+            );
+        }
+    }
+
+    private void validateReceipt(
+            TransactionReceipt receipt,
+            String operation
+    ) {
+        if (receipt == null || !receipt.isStatusOK()) {
+            String status = receipt == null
+                    ? "sin recibo"
+                    : receipt.getStatus();
+
+            throw new IllegalStateException(
+                    "No se pudo " + operation
+                            + ". Estado de la transacción: " + status
+            );
         }
     }
 }

@@ -66,7 +66,8 @@ public interface CredentialRepository
             Long institutionId,
             Long studentId,
             CredentialType type,
-            CredentialStatus status
-    );
+            CredentialStatus status);
+
+    long countByInstitutionIdAndDeletedFalse(Long institutionId);
 
 }

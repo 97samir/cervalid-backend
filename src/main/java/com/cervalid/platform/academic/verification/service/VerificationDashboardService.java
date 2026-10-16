@@ -34,6 +34,10 @@ public class VerificationDashboardService {
                 repository.countDistinctByInstitutionIdAndCertificateIdNotNull(
                                 institutionId);
 
+        long credentials =
+                repository.countDistinctByInstitutionIdAndCredentialIdNotNull(
+                        institutionId);
+
         long valid =
                 repository.countByInstitutionIdAndStatus(
                         institutionId,
@@ -83,6 +87,7 @@ public class VerificationDashboardService {
 
                 .totalVerifications(total)
                 .uniqueCertificates(certificates)
+                .uniqueCredentials(credentials)
                 .today(todayCount)
                 .last7Days(weekCount)
                 .last30Days(monthCount)

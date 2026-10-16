@@ -13,6 +13,7 @@ public class DashboardStatsResponse {
 
     // futuro
     private Long totalCertificates;
-    private Long totalVerified;
+    private Long totalCredentials;
+    private Long totalVerifications;
 
 }

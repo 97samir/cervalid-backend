@@ -2,6 +2,7 @@ package com.cervalid.platform.academic.credential.entity;
 
 import com.cervalid.platform.academic.credential.enums.CredentialStatus;
 import com.cervalid.platform.academic.credential.enums.CredentialType;
+import com.cervalid.platform.audit.entity.AuditableEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -33,7 +34,7 @@ import java.util.UUID;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class Credential {
+public class Credential extends AuditableEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

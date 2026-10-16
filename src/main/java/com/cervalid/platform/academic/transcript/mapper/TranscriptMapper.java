@@ -35,6 +35,8 @@ public class TranscriptMapper {
                 .academicPeriod(transcript.getAcademicPeriod())
                 .status(transcript.getStatus().name())
                 .hash(transcript.getTranscriptHash())
+                .issuedAt(transcript.getIssuedAt())
+                .createdAt(transcript.getCreatedAt())
 
                 .certificatePublicId(certificatePublicId)
 

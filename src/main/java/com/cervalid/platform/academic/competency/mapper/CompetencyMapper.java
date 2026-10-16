@@ -27,6 +27,7 @@ public class CompetencyMapper {
                 .evidenceReference(competency.getEvidenceReference())
                 .evidenceType(competency.getEvidenceType())
                 .academicPeriod(competency.getAcademicPeriod())
+                .createdAt(competency.getCreatedAt())
                 .build();
     }
 }

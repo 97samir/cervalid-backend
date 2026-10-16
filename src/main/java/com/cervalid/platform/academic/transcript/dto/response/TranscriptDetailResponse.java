@@ -28,4 +28,5 @@ public class TranscriptDetailResponse {
     private Integer coursesCount;
     private LocalDateTime issuedAt;
     private List<TranscriptItemDTO> items;
+
 }

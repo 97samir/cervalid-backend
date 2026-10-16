@@ -1,6 +1,6 @@
 package com.cervalid.platform.blockchain.service;
 
-import com.cervalid.platform.blockchain.contract.CertificateRegistry;
+import com.cervalid.platform.blockchain.contract.DocumentRegistry;
 import com.cervalid.platform.blockchain.dto.BlockchainAnchorResult;
 import com.cervalid.platform.blockchain.mapper.BlockchainMapper;
 import lombok.RequiredArgsConstructor;
@@ -8,152 +8,206 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
+import org.web3j.utils.Numeric;
+
+import java.math.BigInteger;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class BlockchainService {
 
+    private static final BigInteger CERTIFICATE_TYPE = BigInteger.ZERO;
+    private static final BigInteger CREDENTIAL_TYPE = BigInteger.ONE;
+
     private final BlockchainContractFactory blockchainContractFactory;
     private final BlockchainMapper blockchainMapper;
 
-    /*
-    @Value("${blockchain.contract-address}")
-    private String contractAddress;
-    */
     @Value("${blockchain.network}")
     private String network;
 
-    // REGISTER
+    // CERTIFICATES
     public BlockchainAnchorResult registerCertificate(
-            String hash, String metadataURI) {
+            String hash,
+            String metadataURI
+    ) {
+        return registerDocument(
+                hash,
+                CERTIFICATE_TYPE,
+                metadataURI,
+                "registrar el certificado"
+        );
+    }
 
+    public boolean verifyCertificate(String hash) {
+        return verifyDocument(
+                hash,
+                CERTIFICATE_TYPE,
+                "certificado"
+        );
+    }
+
+    public BlockchainAnchorResult revokeCertificate(String hash) {
+        return revokeDocument(
+                hash,
+                CERTIFICATE_TYPE,
+                "revocar el certificado"
+        );
+    }
+
+    // CREDENTIALS
+    public BlockchainAnchorResult registerCredential(
+            String hash,
+            String metadataURI
+    ) {
+        return registerDocument(
+                hash,
+                CREDENTIAL_TYPE,
+                metadataURI,
+                "registrar la credencial"
+        );
+    }
+
+    public boolean verifyCredential(String hash) {
+        return verifyDocument(
+                hash,
+                CREDENTIAL_TYPE,
+                "credencial"
+        );
+    }
+
+    public BlockchainAnchorResult revokeCredential(String hash) {
+        return revokeDocument(
+                hash,
+                CREDENTIAL_TYPE,
+                "revocar la credencial"
+        );
+    }
+
+    // SHARED DOCUMENT OPERATIONS
+    private BlockchainAnchorResult registerDocument(
+            String hash,
+            BigInteger documentType,
+            String metadataURI,
+            String operation
+    ) {
         try {
+            if (metadataURI == null || metadataURI.isBlank()) {
+                throw new IllegalArgumentException(
+                        "La URL de metadatos es obligatoria"
+                );
+            }
 
-            CertificateRegistry contract =
-                    blockchainContractFactory.loadContract();
+            DocumentRegistry contract =
+                    blockchainContractFactory.loadDocumentRegistry();
 
-            System.out.println("Hash enviado: " + hash);
-
-            TransactionReceipt receipt = contract.registerCertificate(
+            TransactionReceipt receipt = contract.registerDocument(
                     hexStringToBytes32(hash),
+                    documentType,
                     metadataURI
             ).send();
-            
-            // Validar estado
-            if (!receipt.isStatusOK()) {
-                throw new RuntimeException("Transaction failed: " + receipt.getStatus());
-            }
 
-            // Leer eventos
-            var events = contract.getCertificateRegisteredEvents(receipt);
-
-            if (!events.isEmpty()) {
-                var event = events.get(0);
-                System.out.println("Certificado registrado:");
-                System.out.println("Hash: " + event.hash);
-                System.out.println("Institución: " + event.institution);
-            }
-
-            var raw = contract.getCertificate(hexStringToBytes32(hash)).send();
-            System.out.println("RAW CONTRACT RESULT: " + raw.toString());
+            validateReceipt(receipt, operation);
 
             return blockchainMapper.toResult(receipt, network);
 
         } catch (Exception e) {
-            System.out.println("===== BLOCKCHAIN ERROR FULL STACK =====");
-            e.printStackTrace();
-
+            log.error("Error al {}", operation, e);
             throw new RuntimeException(
-                    "BLOCKCHAIN ERROR: " + e.getMessage(),
+                    "Error al " + operation + " en blockchain",
                     e
             );
         }
     }
 
-    // VERIFY
-    public boolean verifyCertificate(String hash) {
+    private boolean verifyDocument(
+            String hash,
+            BigInteger documentType,
+            String documentName
+    ) {
         try {
-            CertificateRegistry contract =
-                    blockchainContractFactory.loadContract();
+            DocumentRegistry contract =
+                    blockchainContractFactory.loadDocumentRegistry();
 
-            byte[] bytes32 = hexStringToBytes32(hash);
-
-            System.out.println("===== BLOCKCHAIN DEBUG =====");
-            System.out.println("Contract Address: " + System.getenv("BLOCKCHAIN_CONTRACT_ADDRESS"));
-            System.out.println("Hash input: " + hash);
-            System.out.println("Bytes32: " + java.util.Arrays.toString(bytes32));
-
-            Boolean result = contract.verifyCertificate(bytes32).send();
-
-            System.out.println("BLOCKCHAIN RESULT: " + result);
+            Boolean result = contract.verifyDocument(
+                    hexStringToBytes32(hash),
+                    documentType
+            ).send();
 
             return Boolean.TRUE.equals(result);
 
         } catch (Exception e) {
-            System.out.println("BLOCKCHAIN ERROR FULL STACK:");
-            e.printStackTrace();
-
-            return false; // fallback seguro
+            log.error(
+                    "Error al verificar el {} en blockchain",
+                    documentName,
+                    e
+            );
+            return false;
         }
     }
 
-    // REVOKE
-    public BlockchainAnchorResult revokeCertificate(String hash) {
+    private BlockchainAnchorResult revokeDocument(
+            String hash,
+            BigInteger documentType,
+            String operation
+    ) {
         try {
-            CertificateRegistry contract =
-                    blockchainContractFactory.loadContract();
+            DocumentRegistry contract =
+                    blockchainContractFactory.loadDocumentRegistry();
 
-            TransactionReceipt receipt =
-                    contract.revokeCertificate(
-                            hexStringToBytes32(hash))
-                            .send();
+            TransactionReceipt receipt = contract.revokeDocument(
+                    hexStringToBytes32(hash),
+                    documentType
+            ).send();
 
-            if (!receipt.isStatusOK()) {
-                throw new RuntimeException("Transaction failed");
-            }
+            validateReceipt(receipt, operation);
 
             return blockchainMapper.toResult(receipt, network);
 
         } catch (Exception e) {
-            throw new RuntimeException("Error revoking certificate", e);
+            log.error("Error al {}", operation, e);
+            throw new RuntimeException(
+                    "Error al " + operation + " en blockchain",
+                    e
+            );
         }
     }
 
-    // REACTIVATE
-    public BlockchainAnchorResult reactivateCertificate(String hash) {
-        try {
-            CertificateRegistry contract =
-                    blockchainContractFactory.loadContract();
+    // UTILITIES
+    private void validateReceipt(
+            TransactionReceipt receipt,
+            String operation
+    ) {
+        if (receipt == null || !receipt.isStatusOK()) {
+            String status = receipt == null
+                    ? "sin recibo"
+                    : receipt.getStatus();
 
-            TransactionReceipt receipt = contract
-                    .reactivateCertificate(
-                            hexStringToBytes32(hash))
-                    .send();
-
-            if (!receipt.isStatusOK()) {
-                throw new RuntimeException("Transaction failed");
-            }
-
-            return blockchainMapper.toResult(receipt, network);
-
-        } catch (Exception e) {
-            throw new RuntimeException("Error reactivating certificate", e);
+            throw new IllegalStateException(
+                    "No se pudo " + operation
+                            + ". Estado de la transacción: " + status
+            );
         }
     }
 
-    // UTIL
-    private byte[] hexStringToBytes32(String hex) {
-        if (hex.startsWith("0x")) {
-            hex = hex.substring(2);
+    private byte[] hexStringToBytes32(String hash) {
+        if (hash == null || hash.isBlank()) {
+            throw new IllegalArgumentException(
+                    "El hash no puede estar vacío"
+            );
         }
 
-        byte[] bytes = new byte[32];
-        byte[] input = org.web3j.utils.Numeric.hexStringToByteArray(hex);
+        String normalizedHash = hash.startsWith("0x")
+                ? hash.substring(2)
+                : hash;
 
-        System.arraycopy(input, 0, bytes, 32 - input.length, input.length);
+        if (!normalizedHash.matches("[0-9a-fA-F]{64}")) {
+            throw new IllegalArgumentException(
+                    "El hash debe contener exactamente 32 bytes "
+                            + "(64 caracteres hexadecimales)"
+            );
+        }
 
-        return bytes;
+        return Numeric.hexStringToByteArray(normalizedHash);
     }
-
 }

@@ -53,4 +53,6 @@ public interface CertificateRepository
             Long institutionId,
             String search,
             Pageable pageable);
+
+    long countByInstitutionId(Long institutionId);
 }

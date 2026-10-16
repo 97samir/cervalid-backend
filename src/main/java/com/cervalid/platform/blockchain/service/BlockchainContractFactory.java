@@ -1,16 +1,15 @@
 package com.cervalid.platform.blockchain.service;
 
-import com.cervalid.platform.blockchain.contract.CertificateRegistry;
+import com.cervalid.platform.blockchain.contract.DocumentRegistry;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.web3j.crypto.Credentials;
 import org.web3j.protocol.Web3j;
-import org.web3j.protocol.core.DefaultBlockParameterName;
 import org.web3j.tx.gas.DefaultGasProvider;
 
-import java.io.IOException;
-
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class BlockchainContractFactory {
@@ -19,29 +18,22 @@ public class BlockchainContractFactory {
     private final Credentials credentials;
 
     @Value("${blockchain.contract-address}")
-    private String contractAddress;
+    private String documentRegistryAddress;
 
-    public CertificateRegistry loadContract() {
-
-        System.out.println("===== BLOCKCHAIN LOAD =====");
-        System.out.println("Contract Address: " + contractAddress);
-        System.out.println("Web3j: " + web3j);
-        System.out.println("Credentials: " + credentials.getAddress());
-
-        try {
-            String code = web3j.ethGetCode(
-                    contractAddress,
-                    DefaultBlockParameterName.LATEST
-            ).send().getCode();
-
-            System.out.println("Contract code: " + code);
-
-        } catch (IOException e) {
-            e.printStackTrace();
+    public DocumentRegistry loadDocumentRegistry() {
+        if (documentRegistryAddress == null
+                || documentRegistryAddress.isBlank()) {
+            throw new IllegalStateException(
+                    "La dirección de DocumentRegistry no está configurada"
+            );
         }
 
-        return CertificateRegistry.load(
-                contractAddress,
+        log.debug("Cargando DocumentRegistry en {} con wallet {}",
+                documentRegistryAddress,
+                credentials.getAddress());
+
+        return DocumentRegistry.load(
+                documentRegistryAddress,
                 web3j,
                 credentials,
                 new DefaultGasProvider()

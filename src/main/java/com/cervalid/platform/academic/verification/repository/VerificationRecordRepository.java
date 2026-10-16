@@ -40,6 +40,9 @@ public interface VerificationRecordRepository
     long countDistinctByInstitutionIdAndCertificateIdNotNull(
             Long institutionId);
 
+    long countDistinctByInstitutionIdAndCredentialIdNotNull(
+            Long institutionId);
+
     long countByInstitutionIdAndStatus(
             Long institutionId,
             VerificationStatus status);
@@ -69,10 +72,6 @@ public interface VerificationRecordRepository
             Long credentialId,
             Long institutionId,
             Pageable pageable);
-
-    long countDistinctByInstitutionIdAndCredentialIdNotNull(
-            Long institutionId
-    );
 
     long countByCredentialId(
             Long credentialId

@@ -15,7 +15,6 @@ import java.util.UUID;
 public class TimelineEventResponse {
 
     private UUID publicId;
-    //private Long institutionId;
     private UUID studentPublicId;
     private TimelineEventType type;
     private TimelineEventSource source;

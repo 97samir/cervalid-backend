@@ -25,11 +25,9 @@ public class CredentialManagementService {
     private final StudentRepository studentRepository;
     private final CredentialValidationService credentialValidationService;
     private final CredentialTimelineService credentialTimelineService;
-    private final CredentialNumberGenerator credentialNumberGenerator;
     private final CredentialDocumentValidationService documentValidationService;
-    private final CredentialHashService credentialHashService;
-    private final CredentialVerificationHashService credentialVerificationHashService;
-    private final CredentialVerificationUrlBuilder credentialVerificationUrlBuilder;
+    private final CredentialGenerationService credentialGenerationService;
+    private final CredentialBlockchainService credentialBlockchainService;
 
     @Transactional
     public Credential create(
@@ -52,36 +50,37 @@ public class CredentialManagementService {
                 request
         );
 
-        String credentialNumber = generateCredentialNumber(institutionId);
-
         Credential credential = Credential.builder()
-                .institutionId(institutionId)
-                .studentId(student.getId())
-                .credentialNumber(credentialNumber)
-                .type(request.getType())
                 .title(request.getTitle().trim())
-                .description(request.getDescription()
-                        != null ? request.getDescription().trim()
+                .description(request.getDescription() != null
+                        ? request.getDescription().trim()
                         : null)
+                .type(request.getType())
                 .awardedAt(request.getAwardedAt())
-                .status(CredentialStatus.DRAFT)
-                .deleted(false)
                 .build();
 
-        return credentialRepository.save(credential);
+        return credentialGenerationService.generate(
+                institutionId,
+                student,
+                credential
+        );
     }
 
     @Transactional
     public Credential update(
             Long institutionId,
             UUID publicId,
-            UpdateCredentialRequest request
-    ) {
+            UpdateCredentialRequest request) {
 
-        Credential credential =
-                getCredential(institutionId, publicId);
+        Credential credential = getCredential(
+                institutionId,
+                publicId
+        );
 
-        credentialValidationService.validateUpdate(credential, request);
+        credentialValidationService.validateUpdate(
+                credential,
+                request
+        );
 
         credential.setTitle(request.getTitle().trim());
 
@@ -91,14 +90,14 @@ public class CredentialManagementService {
                         : null
         );
 
-        return credentialRepository.save(credential);
+        return credentialGenerationService.update(credential);
     }
 
     @Transactional
     public Credential issue(
             Long institutionId,
-            UUID publicId) {
-
+            UUID publicId
+    ) {
         Credential credential = getCredential(
                 institutionId,
                 publicId
@@ -106,31 +105,24 @@ public class CredentialManagementService {
 
         credentialValidationService.validateIssue(credential);
 
-        credential.setStatus(CredentialStatus.ISSUED);
-        credential.setIssuedAt(LocalDateTime.now());
+        Credential issuedCredential =
+                credentialGenerationService.issue(credential);
 
-        String credentialHash = credentialHashService
-                .generateCredentialHash(credential);
+        // Registrar la credencial emitida en blockchain.
+        var blockchainResult =
+                credentialBlockchainService.anchor(issuedCredential);
 
-        credential.setCredentialHash(credentialHash);
+        issuedCredential.setBlockchainTxHash(blockchainResult.getTxHash());
+        issuedCredential.setBlockchainNetwork(blockchainResult.getNetwork());
+        issuedCredential.setBlockNumber(blockchainResult.getBlockNumber());
+        issuedCredential.setAnchoredAt(LocalDateTime.now());
 
-        String verificationHash = credentialVerificationHashService
-                .generateVerificationHash(credentialHash);
-
-        credential.setVerificationHash(verificationHash);
-
-        String verificationUrl = credentialVerificationUrlBuilder
-                .build(credential.getPublicId());
-
-        credential.setVerificationUrl(verificationUrl);
-
-        Credential issuedCredential = credentialRepository
-                .save(credential);
+        issuedCredential = credentialRepository.save(issuedCredential);
 
         Student student = getStudent(
                 institutionId,
                 credential.getStudentId()
-                );
+        );
 
         credentialTimelineService.credentialIssued(
                 issuedCredential,
@@ -146,28 +138,44 @@ public class CredentialManagementService {
             UUID publicId,
             RevokeCredentialRequest request
     ) {
-
-        Credential credential =
-                getCredential(institutionId, publicId);
+        Credential credential = getCredential(
+                institutionId,
+                publicId
+        );
 
         credentialValidationService.validateRevoke(credential);
-        credential.setStatus(CredentialStatus.REVOKED);
-        credential.setRevokedAt(LocalDateTime.now());
-        credential.setRevocationReason(request.getReason().trim());
 
+        if (request == null
+                || request.getReason() == null
+                || request.getReason().isBlank()) {
+            throw new IllegalArgumentException(
+                    "El motivo de revocación es obligatorio."
+            );
+        }
+
+        // Actualizar el estado y el motivo de revocación.
         Credential revokedCredential =
-                credentialRepository.save(credential);
-
-        Student student =
-                getStudent(
-                        institutionId,
-                        credential.getStudentId()
+                credentialGenerationService.revoke(
+                        credential,
+                        request.getReason().trim()
                 );
+
+        Student student = getStudent(
+                institutionId,
+                credential.getStudentId()
+        );
 
         credentialTimelineService.credentialRevoked(
                 revokedCredential,
                 student
         );
+
+        // Solo revocar en blockchain si se registró previamente.
+        if (revokedCredential.getBlockchainTxHash() != null
+                && !revokedCredential.getBlockchainTxHash().isBlank()) {
+
+            credentialBlockchainService.revoke(revokedCredential);
+        }
 
         return revokedCredential;
     }
@@ -255,23 +263,4 @@ public class CredentialManagementService {
                 .build();
     }
 
-    private String generateCredentialNumber(
-            Long institutionId) {
-
-        String credentialNumber;
-
-        do {
-            credentialNumber =
-                    credentialNumberGenerator.generate();
-
-        } while (
-                credentialRepository
-                        .existsByInstitutionIdAndCredentialNumber(
-                                institutionId,
-                                credentialNumber
-                        )
-        );
-
-        return credentialNumber;
-    }
 }

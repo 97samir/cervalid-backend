@@ -75,56 +75,30 @@ public class CertificateSnapshotBuilder {
                 Map.of(
                         "certificate", Map.of(
                                 "publicId", certificate.getPublicId(),
-                                "certificateNumber",
-                                certificate.getCertificateNumber(),
-
-                                "type",
-                                certificate.getType(),
-
-                                "title",
-                                certificate.getTitle(),
-
-                                "description",
-                                certificate.getDescription(),
-
-                                "awardedAt",
-                                certificate.getAwardedAt(),
-
-                                "issuedAt",
-                                certificate.getIssuedAt()
+                                "certificateNumber", certificate.getCertificateNumber(),
+                                "type", certificate.getType(),
+                                "title", certificate.getTitle(),
+                                "description", certificate.getDescription(),
+                                "awardedAt", certificate.getAwardedAt(),
+                                "issuedAt", certificate.getIssuedAt()
                         ),
 
                         "student", Map.of(
-                                "publicId",
-                                student.getPublicId(),
-
-                                "studentCode",
-                                student.getStudentCode(),
-
-                                "name",
-                                studentName
+                                "publicId", student.getPublicId(),
+                                "studentCode", student.getStudentCode(),
+                                "name", studentName
                         ),
 
                         "institution", Map.of(
-                                "id",
-                                institution.getId(),
-
-                                "name",
-                                institution.getName()
+                                "id", institution.getId(),
+                                "name", institution.getName()
                         ),
 
                         "academic", Map.of(
-                                "program",
-                                profile.getProgram(),
-
-                                "faculty",
-                                profile.getFaculty(),
-
-                                "modality",
-                                profile.getModality(),
-
-                                "currentCycle",
-                                profile.getCurrentCycle()
+                                "program", profile.getProgram(),
+                                "faculty", profile.getFaculty(),
+                                "modality", profile.getModality(),
+                                "currentCycle", profile.getCurrentCycle()
                         )
                 );
 

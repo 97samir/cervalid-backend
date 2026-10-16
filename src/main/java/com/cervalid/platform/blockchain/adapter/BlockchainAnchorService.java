@@ -17,18 +17,52 @@ public class BlockchainAnchorService {
     @Value("${app.frontend.url}")
     private String frontendUrl;
 
+    // CERTIFICATES
     public BlockchainAnchorResult anchorCertificate(
-            BlockchainCertificatePayload payload) {
-
-        // Convertir payload a JSON determinístico hashable
+            BlockchainCertificatePayload payload
+    ) {
         String payloadHash = hashService.sha256(payload.toMap());
 
-        // Enviar SOLO hash a blockchain
         return blockchainService.registerCertificate(
                 payloadHash,
-                frontendUrl +
-                        "/metadata/" +
-                        payload.getCertificateNumber()
+                frontendUrl
+                        + "/metadata/"
+                        + payload.getCertificateNumber()
         );
+    }
+
+    // CREDENTIALS
+    public BlockchainAnchorResult anchorCredential(
+            String credentialHash,
+            String verificationUrl
+    ) {
+        if (credentialHash == null || credentialHash.isBlank()) {
+            throw new IllegalArgumentException(
+                    "El hash de la credencial es obligatorio"
+            );
+        }
+
+        if (verificationUrl == null || verificationUrl.isBlank()) {
+            throw new IllegalArgumentException(
+                    "La URL de verificación es obligatoria"
+            );
+        }
+
+        // El credentialHash ya fue calculado por CredentialHashService.
+        // No volver a calcularlo: se registra directamente en blockchain.
+        return blockchainService.registerCredential(
+                credentialHash,
+                verificationUrl
+        );
+    }
+
+    public BlockchainAnchorResult revokeCredential(
+            String credentialHash
+    ) {
+        return blockchainService.revokeCredential(credentialHash);
+    }
+
+    public boolean verifyCredential(String credentialHash) {
+        return blockchainService.verifyCredential(credentialHash);
     }
 }

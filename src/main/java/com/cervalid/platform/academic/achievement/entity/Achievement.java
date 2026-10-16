@@ -2,6 +2,7 @@ package com.cervalid.platform.academic.achievement.entity;
 
 import com.cervalid.platform.academic.achievement.enums.AchievementStatus;
 import com.cervalid.platform.academic.achievement.enums.AchievementType;
+import com.cervalid.platform.audit.entity.AuditableEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -15,7 +16,7 @@ import java.util.UUID;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class Achievement {
+public class Achievement extends AuditableEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

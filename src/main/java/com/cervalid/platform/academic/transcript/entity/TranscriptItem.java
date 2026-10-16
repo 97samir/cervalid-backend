@@ -1,5 +1,6 @@
 package com.cervalid.platform.academic.transcript.entity;
 
+import com.cervalid.platform.audit.entity.AuditableEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -13,7 +14,7 @@ import java.util.UUID;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class TranscriptItem {
+public class TranscriptItem extends AuditableEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

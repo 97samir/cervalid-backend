@@ -3,6 +3,7 @@ package com.cervalid.platform.academic.achievement.dto.response;
 import lombok.*;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Data
@@ -19,4 +20,6 @@ public class AchievementResponse {
     private LocalDate achievedDate;
     private String academicPeriod;
     private String status;
+
+    private LocalDateTime createdAt;
 }

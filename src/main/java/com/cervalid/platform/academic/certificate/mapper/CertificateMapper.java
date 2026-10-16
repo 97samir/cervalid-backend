@@ -20,7 +20,7 @@ public class CertificateMapper {
                 .title(certificate.getTitle())
                 .description(certificate.getDescription())
                 .awardedAt(certificate.getAwardedAt())
-                .hash(certificate.getCertificateHash())
+                .certificateHash(certificate.getCertificateHash())
                 .blockchainTxHash(certificate.getBlockchainTxHash())
                 .verificationHash(certificate.getVerificationHash())
                 .verificationUrl(certificate.getVerificationUrl())
@@ -29,6 +29,7 @@ public class CertificateMapper {
                 .snapshotJson(certificate.getSnapshotJson())
                 .issuedAt(certificate.getIssuedAt())
                 .revokedAt(certificate.getRevokedAt())
+                .createdAt(certificate.getCreatedAt())
                 .build();
     }
 
