@@ -55,6 +55,13 @@ public class VerificationResponseMapper {
             response.setDocumentHash(certificate.getDocumentHash());
             response.setDocumentUrl(certificate.getDocumentUrl());
 
+            response.setCertificateHash(certificate.getCertificateHash());
+            response.setVerificationHash(certificate.getVerificationHash());
+            response.setBlockchainTxHash(certificate.getBlockchainTxHash());
+            response.setBlockchainNetwork(certificate.getNetwork());
+            response.setBlockNumber(certificate.getBlockNumber());
+            response.setAnchoredAt(certificate.getAnchoredAt());
+
             if (view != null) {
                 response.setStudentName(view.getStudentName());
                 response.setInstitutionName(view.getInstitutionName());

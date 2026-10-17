@@ -11,15 +11,15 @@ import java.util.List;
 @Configuration
 public class CorsConfig {
 
-    @Value("${app.frontend.urlReact}")
-    private String frontendUrlReact;
+    @Value("${app.frontend.url}")
+    private String frontendUrl;
 
     @Bean
     public CorsFilter corsFilter() {
         CorsConfiguration config = new CorsConfiguration();
 
         config.setAllowCredentials(true);
-        config.setAllowedOrigins(List.of(frontendUrlReact));
+        config.setAllowedOrigins(List.of(frontendUrl));
         config.setAllowedHeaders(List.of(
                 "Origin",
                 "Content-Type",

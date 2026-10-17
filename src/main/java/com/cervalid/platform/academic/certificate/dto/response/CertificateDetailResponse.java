@@ -15,7 +15,11 @@ public class CertificateDetailResponse {
     private String transcriptHash;
     private String studentCode;
 
-    private String network;
+    private String certificateHash;
+    private String verificationHash;
+    private String blockchainTxHash;
+
+    private String blockchainNetwork;
     private Long blockNumber;
     private LocalDateTime anchoredAt;
 }

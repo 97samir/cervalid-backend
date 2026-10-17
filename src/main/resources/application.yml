@@ -1,16 +1,21 @@
-#Configuración base común para todos los perfiles
+
 spring:
   application:
-    name: platform
+    name: cervalid-api
+
+  profiles:
+    default: local
 
   datasource:
-    url: jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME}
     username: ${DB_USER}
     password: ${DB_PASSWORD}
+
   jpa:
+    open-in-view: false
     hibernate:
-      ddl-auto: update
-    show-sql: true
+      ddl-auto: ${DDL_AUTO:update}
+    show-sql: ${SHOW_SQL:false}
     properties:
       hibernate:
         format_sql: true
@@ -18,15 +23,8 @@ spring:
   aop:
     proxy-target-class: true
 
-  logging:
-    level:
-      com.cervalid.platform.security: DEBUG
-      org.hibernate.SQL: ON
-      org.hibernate.orm.jdbc.bind: TRACE
-
-      org.springframework.security: DEBUG
-      org.springframework.security.web.FilterChainProxy: DEBUG
-      org.springframework.security.access: DEBUG
+server:
+  port: ${SERVER_PORT:8081}
 
 app:
   superadmin:
@@ -34,8 +32,7 @@ app:
     password: ${SUPERADMIN_PASSWORD}
 
   frontend:
-    url: ${FRONTEND_URL}
-    urlReact: ${FRONTEND_URL_REACT}
+    url: ${FRONTEND_URL:http://localhost:5173}
 
   certificate:
     verification-url: /verify
@@ -45,16 +42,19 @@ app:
 
   jwt:
     secret: ${JWT_SECRET}
-    expiration: 3600000 # 1 HORA
-    refresh-expiration: 604800000 # 7 DIAS
+    expiration: 3600000 # 1 hora
+    refresh-expiration: 604800000 # 7 dias
 
 sendgrid:
   api:
     key: ${SENDGRID_API_KEY}
 
 blockchain:
-  rpc-url: ${BLOCKCHAIN_RPC_URL}
+  rpc-url: ${BLOCKCHAIN_RPC_URL:http://127.0.0.1:8545}
   private-key: ${BLOCKCHAIN_PRIVATE_KEY}
   contract-address: ${BLOCKCHAIN_CONTRACT_ADDRESS}
-  network: ${NETWORK}
+  network: ${NETWORK:ANVIL_LOCAL}
 
+logging:
+  level:
+    root: INFO

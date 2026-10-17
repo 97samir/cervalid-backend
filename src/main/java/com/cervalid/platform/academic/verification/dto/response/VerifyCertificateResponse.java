@@ -6,6 +6,7 @@ import com.cervalid.platform.academic.timeline.dto.view.PublicTimelineEventView;
 import com.cervalid.platform.academic.verification.enums.VerificationLevel;
 import lombok.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -32,6 +33,14 @@ public class VerifyCertificateResponse {
 
     private String documentHash;
     private String documentUrl;
+
+    private String certificateHash;
+    private String verificationHash;
+    private String blockchainTxHash;
+    private String blockchainNetwork;
+    private Long blockNumber;
+    private LocalDateTime anchoredAt;
+
 
     private String issuedAt;
     private String awardedAt;

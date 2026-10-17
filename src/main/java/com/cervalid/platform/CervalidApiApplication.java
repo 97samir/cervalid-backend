@@ -8,10 +8,10 @@ import org.springframework.scheduling.annotation.EnableAsync;
 @SpringBootApplication(scanBasePackages = "com.cervalid.platform")
 @EnableAsync
 @EnableAspectJAutoProxy(proxyTargetClass = true)
-public class PlatformApplication {
+public class CervalidApiApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(PlatformApplication.class, args);
+		SpringApplication.run(CervalidApiApplication.class, args);
 	}
 
 }
