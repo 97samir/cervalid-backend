@@ -1,6 +1,7 @@
 package com.cervalid.platform.academic.certificate.repository;
 
 import com.cervalid.platform.academic.certificate.entity.Certificate;
+import com.cervalid.platform.academic.certificate.enums.CertificateStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -54,5 +55,21 @@ public interface CertificateRepository
             String search,
             Pageable pageable);
 
+    Page<Certificate> findByStudentIdAndInstitutionIdAndDeletedFalse(
+            Long studentId,
+            Long institutionId,
+            Pageable pageable
+    );
+
     long countByInstitutionId(Long institutionId);
+
+
+    long countByInstitutionIdAndDeletedFalse(Long institutionId);
+
+    long countByInstitutionIdAndStatusAndDeletedFalse(
+            Long institutionId,
+            CertificateStatus status
+    );
+
+
 }

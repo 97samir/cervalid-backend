@@ -4,6 +4,7 @@ import com.cervalid.platform.academic.credential.dto.filter.CredentialFilterRequ
 import com.cervalid.platform.academic.credential.dto.request.CreateCredentialRequest;
 import com.cervalid.platform.academic.credential.dto.request.RevokeCredentialRequest;
 import com.cervalid.platform.academic.credential.dto.request.UpdateCredentialRequest;
+import com.cervalid.platform.academic.credential.dto.response.CredentialDashboardSummaryResponse;
 import com.cervalid.platform.academic.credential.dto.response.CredentialDetailResponse;
 import com.cervalid.platform.academic.credential.dto.response.CredentialDocumentResponse;
 import com.cervalid.platform.academic.credential.dto.response.CredentialResponse;
@@ -173,4 +174,19 @@ public class CredentialController {
                 )
         );
     }
+
+    // dashboard
+    @GetMapping("/dashboard/summary")
+    public ResponseEntity<CredentialDashboardSummaryResponse>
+    getDashboardSummary() {
+
+        Long institutionId = securityContextService
+                .getInstitutionId();
+
+        return ResponseEntity.ok(
+                credentialService.getDashboardSummary(
+                        institutionId)
+        );
+    }
+
 }

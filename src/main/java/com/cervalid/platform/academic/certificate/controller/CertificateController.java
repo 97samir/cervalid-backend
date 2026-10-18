@@ -3,6 +3,7 @@ package com.cervalid.platform.academic.certificate.controller;
 import com.cervalid.platform.academic.certificate.dto.request.CertificateSearchRequest;
 import com.cervalid.platform.academic.certificate.dto.request.IssueCertificateRequest;
 import com.cervalid.platform.academic.certificate.dto.request.UpdateCertificateCredentialRequest;
+import com.cervalid.platform.academic.certificate.dto.response.CertificateDashboardSummaryResponse;
 import com.cervalid.platform.academic.certificate.dto.response.CertificateDetailResponse;
 import com.cervalid.platform.academic.certificate.dto.response.CertificateDocumentResponse;
 import com.cervalid.platform.academic.certificate.dto.response.CertificateResponse;
@@ -26,13 +27,17 @@ public class CertificateController {
 
     private final CertificateService certificateService;
 
+    // dashboard
+    @GetMapping("/dashboard/summary")
+    public ResponseEntity<CertificateDashboardSummaryResponse> getDashboardSummary() {
+        return ResponseEntity.ok(certificateService.getDashboardSummary());
+    }
+
     // CREA / EMITE - ISSUE FROM TRANSCRIPT (RESTFUL)
     @PostMapping("/transcripts/{transcriptPublicId}")
     public ResponseEntity<CertificateResponse> issueFromTranscript(
             @PathVariable UUID transcriptPublicId,
             @Valid @RequestBody IssueCertificateRequest request){
-            //@RequestBody(required = false)
-            //IssueCertificateRequest request) {
 
         return ResponseEntity.ok(
                 certificateService.issueFromTranscript(

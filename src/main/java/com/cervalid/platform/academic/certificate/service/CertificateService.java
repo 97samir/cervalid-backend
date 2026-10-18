@@ -3,6 +3,7 @@ package com.cervalid.platform.academic.certificate.service;
 import com.cervalid.platform.academic.certificate.dto.request.CertificateSearchRequest;
 import com.cervalid.platform.academic.certificate.dto.request.IssueCertificateRequest;
 import com.cervalid.platform.academic.certificate.dto.request.UpdateCertificateCredentialRequest;
+import com.cervalid.platform.academic.certificate.dto.response.CertificateDashboardSummaryResponse;
 import com.cervalid.platform.academic.certificate.dto.response.CertificateDetailResponse;
 import com.cervalid.platform.academic.certificate.dto.response.CertificateDocumentResponse;
 import com.cervalid.platform.academic.certificate.dto.response.CertificateResponse;
@@ -104,4 +105,8 @@ public class CertificateService {
                 pageable);
     }
 
+    // dashboard
+    public CertificateDashboardSummaryResponse getDashboardSummary() {
+        return queryService.getDashboardSummary();
+    }
 }

@@ -26,4 +26,11 @@ public class CredentialResponse {
     private CredentialStatus status;
     private LocalDateTime revokedAt;
     private LocalDateTime createdAt;
+
+    // filtros dashboard
+    private String studentName;
+    private String studentCode;
+    private String program;
+    private String faculty;
+
 }

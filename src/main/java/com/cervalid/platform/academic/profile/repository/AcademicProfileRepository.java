@@ -42,4 +42,11 @@ public interface AcademicProfileRepository
             Pageable pageable
     );
 
+    // consulta estudiantes de una institucion
+    List<AcademicProfile> findAllByInstitutionIdAndStudentIdIn(
+            Long institutionId,
+            Collection<Long> studentIds
+    );
+
+
 }

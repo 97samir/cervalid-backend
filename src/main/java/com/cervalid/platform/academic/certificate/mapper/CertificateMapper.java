@@ -3,6 +3,9 @@ package com.cervalid.platform.academic.certificate.mapper;
 import com.cervalid.platform.academic.certificate.dto.response.CertificateDetailResponse;
 import com.cervalid.platform.academic.certificate.dto.response.CertificateResponse;
 import com.cervalid.platform.academic.certificate.entity.Certificate;
+import com.cervalid.platform.academic.profile.entity.AcademicProfile;
+import com.cervalid.platform.academic.student.entity.Student;
+import com.cervalid.platform.user.entity.User;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -36,11 +39,44 @@ public class CertificateMapper {
                 .build();
     }
 
-    public CertificateDetailResponse toResponseDetail(Certificate certificate) {
+    // mapeo para dashboard
+    public CertificateResponse toResponse(
+            Certificate certificate,
+            Student student,
+            User user,
+            AcademicProfile profile
+    ) {
+        CertificateResponse response = toResponse(certificate);
+
+        response.setStudentCode(
+                student != null ?
+                        student.getStudentCode() : null);
+
+        response.setStudentName(user != null ? (
+                        (user.getName() != null ? user.getName() : "")
+                                + " "
+                                + (user.getLastName() != null ? user.getLastName() : "")
+                ).trim() : null);
+
+        response.setProgram(
+                profile != null ?
+                        profile.getProgram() : null);
+
+        response.setFaculty(
+                profile != null ?
+                        profile.getFaculty() : null);
+
+        return response;
+    }
+
+    // mapeo para certificado
+    public CertificateDetailResponse toResponseDetail(
+            Certificate certificate,
+            CertificateResponse response) {
 
         return CertificateDetailResponse.builder()
 
-                .certificate(toResponse(certificate))
+                .certificate(response)
                 .transcriptHash(certificate.getTranscriptHash())
                 .certificateHash(certificate.getCertificateHash())
                 .verificationHash(certificate.getVerificationHash())
@@ -48,10 +84,13 @@ public class CertificateMapper {
                 .blockchainNetwork(certificate.getNetwork())
                 .blockNumber(certificate.getBlockNumber())
                 .anchoredAt(certificate.getAnchoredAt())
-                .studentCode(certificate.getSnapshotJson()
-                                .path("student")
-                                .path("studentCode")
-                                .asText(null))
+                .studentCode(response.getStudentCode()
+                        != null
+                        ? response.getStudentCode()
+                        : certificate.getSnapshotJson()
+                        .path("student")
+                        .path("studentCode")
+                        .asText(null))
                 .build();
     }
 

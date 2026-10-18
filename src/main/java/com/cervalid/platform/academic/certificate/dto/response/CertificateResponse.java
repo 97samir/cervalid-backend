@@ -6,6 +6,8 @@ import java.util.UUID;
 
 import com.cervalid.platform.academic.certificate.enums.CertificateStatus;
 import com.cervalid.platform.academic.certificate.enums.CertificateType;
+import com.cervalid.platform.academic.profile.enums.AcademicFaculty;
+import com.cervalid.platform.academic.profile.enums.AcademicProgram;
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.*;
 
@@ -43,4 +45,10 @@ public class CertificateResponse {
     private LocalDateTime issuedAt;
     private LocalDateTime revokedAt;
     private LocalDateTime createdAt;
+
+    // para dashboard
+    private String studentName;
+    private String studentCode;
+    private AcademicProgram program;
+    private AcademicFaculty faculty;
 }

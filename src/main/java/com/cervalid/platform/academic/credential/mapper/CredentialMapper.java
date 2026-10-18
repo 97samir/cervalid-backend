@@ -14,7 +14,9 @@ public class CredentialMapper {
 
     public CredentialResponse toResponse(
             Credential credential,
-            Student student
+            Student student,
+            User user,
+            AcademicProfile profile
     ) {
         return CredentialResponse.builder()
                 .publicId(credential.getPublicId())
@@ -28,7 +30,29 @@ public class CredentialMapper {
                 .status(credential.getStatus())
                 .revokedAt(credential.getRevokedAt())
                 .createdAt(credential.getCreatedAt())
+
+                .studentName(user == null
+                        ? null
+                        : buildStudentName(user))
+                .studentCode(student.getStudentCode())
+
+                .program(profile == null || profile.getProgram() == null
+                        ? null
+                        : profile.getProgram().name())
+                .faculty(profile == null || profile.getFaculty() == null
+                        ? null
+                        : profile.getFaculty().name())
+
                 .build();
+    }
+
+    private String buildStudentName(User user) {
+        String name = user.getName() == null ? "" : user.getName().trim();
+        String lastName = user.getLastName() == null
+                ? ""
+                : user.getLastName().trim();
+
+        return (name + " " + lastName).trim();
     }
 
     public CredentialDetailResponse toDetailResponse(

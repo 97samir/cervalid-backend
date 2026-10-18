@@ -1,6 +1,7 @@
 package com.cervalid.platform.academic.credential.service;
 
 import com.cervalid.platform.academic.credential.dto.filter.CredentialFilterRequest;
+import com.cervalid.platform.academic.credential.dto.response.CredentialDashboardSummaryResponse;
 import com.cervalid.platform.academic.credential.dto.response.CredentialDetailResponse;
 import com.cervalid.platform.academic.credential.dto.response.CredentialResponse;
 import com.cervalid.platform.academic.credential.dto.response.CredentialVerificationResponse;
@@ -23,9 +24,11 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Service
@@ -81,7 +84,7 @@ public class CredentialQueryService {
         );
     }
 
-    /*Obtiene todos los credentials de un estudiante*/
+    // Obtiene todos los credentials de un estudiante
     public Page<CredentialResponse> getByStudent(
             Long institutionId,
             UUID studentPublicId,
@@ -99,6 +102,15 @@ public class CredentialQueryService {
                         )
                 );
 
+        User user = getUser(student);
+
+        AcademicProfile profile = academicProfileRepository
+                .findByStudentIdAndInstitutionId(
+                        student.getId(),
+                        institutionId
+                )
+                .orElse(null);
+
         return credentialRepository
                 .findAllByInstitutionIdAndStudentIdAndDeletedFalse(
                         institutionId,
@@ -108,7 +120,9 @@ public class CredentialQueryService {
                 .map(credential ->
                         credentialMapper.toResponse(
                                 credential,
-                                student
+                                student,
+                                user,
+                                profile
                         )
                 );
     }
@@ -183,7 +197,7 @@ public class CredentialQueryService {
             studentId = student.getId();
         }
 
-        Page<Credential> credentials =
+        Page<Credential> page =
                 credentialRepository.findAll(
                         CredentialSpecification.withFilters(
                                 institutionId,
@@ -193,34 +207,69 @@ public class CredentialQueryService {
                         pageable
                 );
 
-        Set<Long> studentIds =
-                credentials.getContent()
-                        .stream()
-                        .map(Credential::getStudentId)
-                        .collect(Collectors.toSet());
 
-        Map<Long, Student> students =
-                studentRepository
-                        .findAllByInstitutionIdAndIdIn(
+        List<Credential> credentials = page.getContent();
+
+        Set<Long> studentIds = credentials.stream()
+                .map(Credential::getStudentId)
+                .collect(Collectors.toSet());
+
+        Map<Long, Student> studentsById =
+                studentRepository.findAllByInstitutionIdAndIdIn(
                                 institutionId,
                                 studentIds
                         )
                         .stream()
-                        .collect(
-                                Collectors.toMap(
-                                        Student::getId,
-                                        student -> student
-                                )
-                        );
+                        .collect(Collectors.toMap(
+                                Student::getId,
+                                Function.identity()
+                        ));
 
-        return credentials.map(credential ->
-                credentialMapper.toResponse(
-                        credential,
-                        students.get(
-                                credential.getStudentId()
+        List<Long> userIds = studentsById.values().stream()
+                .map(Student::getUserId)
+                .distinct()
+                .toList();
+
+        Map<Long, User> usersById = userRepository.findAllById(userIds)
+                .stream()
+                .collect(Collectors.toMap(
+                        User::getId,
+                        Function.identity()
+                ));
+
+        Map<Long, AcademicProfile> profilesByStudentId =
+                academicProfileRepository
+                        .findAllByInstitutionIdAndStudentIdIn(
+                                institutionId,
+                                studentIds
                         )
-                )
-        );
+                        .stream()
+                        .collect(Collectors.toMap(
+                                AcademicProfile::getStudentId,
+                                Function.identity()
+                        ));
+
+        return page.map(credential -> {
+            Student student = studentsById.get(credential.getStudentId());
+
+            if (student == null) {
+                throw new IllegalStateException(
+                        "No se encontró el estudiante asociado a la credencial."
+                );
+            }
+
+            User user = usersById.get(student.getUserId());
+
+            AcademicProfile profile =
+                    profilesByStudentId.get(student.getId());
+
+            return credentialMapper.toResponse(
+                    credential,
+                    student,
+                    user,
+                    profile
+            );
+        });
     }
 
     /* Obtiene un credencial interno.
@@ -311,6 +360,77 @@ public class CredentialQueryService {
                 user,
                 academicProfile,
                 institution
+        );
+    }
+
+    // dashboard card totales
+    public CredentialDashboardSummaryResponse getDashboardSummary(
+            Long institutionId
+    ) {
+        long total = credentialRepository
+                .countByInstitutionIdAndDeletedFalse(institutionId);
+
+        long issued = credentialRepository
+                .countByInstitutionIdAndStatusAndDeletedFalse(
+                        institutionId,
+                        CredentialStatus.ISSUED
+                );
+
+        long drafts = credentialRepository
+                .countByInstitutionIdAndStatusAndDeletedFalse(
+                        institutionId,
+                        CredentialStatus.DRAFT
+                );
+
+        long revoked = credentialRepository
+                .countByInstitutionIdAndStatusAndDeletedFalse(
+                        institutionId,
+                        CredentialStatus.REVOKED
+                );
+
+        return CredentialDashboardSummaryResponse.builder()
+                .total(total)
+                .issued(issued)
+                .drafts(drafts)
+                .revoked(revoked)
+                .build();
+    }
+
+    // Obtiene una credencial con los datos necesarios para la respuesta
+    public CredentialResponse getResponseByPublicId(
+            Long institutionId,
+            UUID publicId
+    ) {
+        Credential credential = credentialRepository
+                .findByPublicIdAndInstitutionIdAndDeletedFalse(
+                        publicId,
+                        institutionId
+                )
+                .orElseThrow(() ->
+                        new IllegalArgumentException(
+                                "El credential no existe"
+                        )
+                );
+
+        Student student = getStudent(
+                institutionId,
+                credential.getStudentId()
+        );
+
+        User user = getUser(student);
+
+        AcademicProfile profile = academicProfileRepository
+                .findByStudentIdAndInstitutionId(
+                        student.getId(),
+                        institutionId
+                )
+                .orElse(null);
+
+        return credentialMapper.toResponse(
+                credential,
+                student,
+                user,
+                profile
         );
     }
 }
