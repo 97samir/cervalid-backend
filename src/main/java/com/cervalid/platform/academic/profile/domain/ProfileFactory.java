@@ -26,6 +26,7 @@ public class ProfileFactory {
                 .curriculumVersion("v1")
                 .currentCycle(command.getCurrentCycle())
                 .advisor(command.getAdvisor())
+                .academicPeriod(command.getAcademicPeriod())
                 .active(true)
                 .build();
 

@@ -1,3 +1,4 @@
+
 package com.cervalid.platform.security.config;
 
 import com.cervalid.platform.security.jwt.JwtAuthenticationFilter;
@@ -6,12 +7,14 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
@@ -24,87 +27,154 @@ public class SecurityConfig {
 
     @Bean
     public AuthenticationManager authenticationManager(
-            AuthenticationConfiguration config) throws Exception {
+            AuthenticationConfiguration config
+    ) throws Exception {
         return config.getAuthenticationManager();
     }
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain filterChain(
+            HttpSecurity http
+    ) throws Exception {
 
-        try {
+        http
+                .cors(cors -> {})
+                .csrf(csrf -> csrf.disable())
 
-            http
-                    .cors(cors -> {})
-                    .csrf(csrf -> csrf.disable())
+                .sessionManagement(session ->
+                        session.sessionCreationPolicy(
+                                SessionCreationPolicy.STATELESS))
 
-                    .sessionManagement(session ->
-                            session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-                    )
+                // Respuestas de autenticación para la API REST
+                .exceptionHandling(exception -> exception
+                        .authenticationEntryPoint(
+                                new HttpStatusEntryPoint(
+                                        HttpStatus.UNAUTHORIZED
+                                )
+                        )
+                )
 
-                    .authorizeHttpRequests(auth -> auth
+                .authorizeHttpRequests(auth -> auth
 
-                            .requestMatchers("/institutions").hasRole("SUPER_ADMIN")
+                        // Autenticación: acceso público controlado
+                        .requestMatchers(
+                                HttpMethod.POST,
+                                "/auth/login",
+                                "/auth/refresh",
+                                "/auth/logout"
+                        ).permitAll()
 
-                            .requestMatchers("/institution-requests").permitAll()
-                            .requestMatchers("/auth/**").permitAll()
-                            .requestMatchers("/activate").permitAll()
+                        // Temporalmente requiere autenticación.
+                        .requestMatchers(
+                                HttpMethod.POST,
+                                "/auth/select-institution"
+                        ).permitAll()
 
-                            .requestMatchers("/institution-requests/**")
-                            .hasRole("SUPER_ADMIN")
+                        // Operaciones de sesión autenticada
+                        .requestMatchers(
+                                "/auth/me",
+                                "/auth/my-institutions",
+                                "/auth/exit-institution"
+                        ).authenticated()
 
-                            .requestMatchers(HttpMethod.PATCH, "/users/{id}/role")
-                            .hasAnyRole("SUPER_ADMIN", "INSTITUTION_ADMIN")
+                        // Activación y solicitudes de institución
+                        .requestMatchers("/activate").permitAll()
+                        .requestMatchers(
+                                HttpMethod.POST,
+                                "/institution-requests"
+                        ).permitAll()
 
-                            .requestMatchers(HttpMethod.DELETE, "/users/{id}")
-                            .hasAnyRole("SUPER_ADMIN", "INSTITUTION_ADMIN")
+                        .requestMatchers("/institution-requests/**")
+                        .hasRole("SUPER_ADMIN")
 
-                            .requestMatchers(HttpMethod.GET, "/users")
-                            .hasAnyRole("SUPER_ADMIN","INSTITUTION_ADMIN","INSTITUTION_AUDITOR")
+                        // Instituciones
+                        .requestMatchers("/institutions")
+                        .hasRole("SUPER_ADMIN")
 
-                            .requestMatchers(HttpMethod.GET, "/institutions")
-                            .hasRole("SUPER_ADMIN")
+                        .requestMatchers(
+                                HttpMethod.PATCH,
+                                "/institution/{id}"
+                        ).hasRole("SUPER_ADMIN")
 
-                            .requestMatchers(HttpMethod.GET, "/users/**")
-                            .hasAnyRole("SUPER_ADMIN", "INSTITUTION_ADMIN", "INSTITUTION_AUDITOR",
-                                    "INSTITUTION_SUBADMIN")
+                        // Usuarios
+                        .requestMatchers(
+                                HttpMethod.PATCH,
+                                "/users/{id}/role"
+                        ).hasAnyRole(
+                                "SUPER_ADMIN",
+                                "INSTITUTION_ADMIN"
+                        )
 
-                            .requestMatchers(HttpMethod.PATCH, "/institution/{id}")
-                            .hasRole("SUPER_ADMIN")
+                        .requestMatchers(
+                                HttpMethod.DELETE,
+                                "/users/{id}"
+                        ).hasAnyRole(
+                                "SUPER_ADMIN",
+                                "INSTITUTION_ADMIN"
+                        )
 
-                            .requestMatchers(HttpMethod.PATCH, "/institution-users/**")
-                            .hasAnyRole("SUPER_ADMIN", "INSTITUTION_ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/users")
+                        .hasAnyRole(
+                                "SUPER_ADMIN",
+                                "INSTITUTION_ADMIN",
+                                "INSTITUTION_AUDITOR"
+                        )
 
-                            .requestMatchers("/users/**")
-                            .hasAnyRole("SUPER_ADMIN", "INSTITUTION_ADMIN",
-                                    "INSTITUTION_SUBADMIN")
+                        .requestMatchers(HttpMethod.GET, "/users/**")
+                        .hasAnyRole(
+                                "SUPER_ADMIN",
+                                "INSTITUTION_ADMIN",
+                                "INSTITUTION_AUDITOR",
+                                "INSTITUTION_SUBADMIN"
+                        )
 
-                            .requestMatchers( "/invitations")
-                            .hasAnyRole("SUPER_ADMIN", "INSTITUTION_ADMIN",
-                                    "INSTITUTION_SUBADMIN")
+                        .requestMatchers("/users/**")
+                        .hasAnyRole(
+                                "SUPER_ADMIN",
+                                "INSTITUTION_ADMIN",
+                                "INSTITUTION_SUBADMIN"
+                        )
 
-                            .requestMatchers("/verification/**").permitAll()
-                            .requestMatchers(HttpMethod.POST, "/certificates")
-                            .hasAnyRole("INSTITUTION_ADMIN", "INSTITUTION_SUBADMIN")
+                        // Usuarios vinculados a instituciones
+                        .requestMatchers(
+                                HttpMethod.PATCH,
+                                "/institution-users/**"
+                        ).hasAnyRole(
+                                "SUPER_ADMIN",
+                                "INSTITUTION_ADMIN"
+                        )
 
-                            // TODO LO DEMÁS AUTENTICADO
-                            .anyRequest().authenticated()
-                    )
+                        // Invitaciones
+                        .requestMatchers("/invitations")
+                        .hasAnyRole(
+                                "SUPER_ADMIN",
+                                "INSTITUTION_ADMIN",
+                                "INSTITUTION_SUBADMIN"
+                        )
 
-                    .addFilterBefore(
-                            jwtAuthenticationFilter,
-                            UsernamePasswordAuthenticationFilter.class
-                    )
+                        // Verificación pública
+                        .requestMatchers("/verification/**").permitAll()
 
-                    .userDetailsService(userDetailsService);
+                        // Emisión de certificados
+                        .requestMatchers(
+                                HttpMethod.POST,
+                                "/certificates"
+                        ).hasAnyRole(
+                                "INSTITUTION_ADMIN",
+                                "INSTITUTION_SUBADMIN"
+                        )
 
-            return http.build();
+                        // Todo lo demás requiere autenticación
+                        .anyRequest().authenticated()
+                )
 
-        } catch (Exception e) {
+                .addFilterBefore(
+                        jwtAuthenticationFilter,
+                        UsernamePasswordAuthenticationFilter.class
+                )
 
-            System.out.println("ERROR EN SECURITY CONFIG");
-            e.printStackTrace();
+                .userDetailsService(userDetailsService);
 
-            throw e;
-        }
+        return http.build();
     }
 }

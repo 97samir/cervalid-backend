@@ -1,4 +1,4 @@
-package com.cervalid.platform.auth.dto;
+package com.cervalid.platform.auth.dto.response;
 
 import lombok.Getter;
 import lombok.Setter;

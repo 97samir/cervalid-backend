@@ -88,7 +88,7 @@ public class CertificateManagementService {
                         .type(request != null
                                 && request.getType() != null
                                 ? request.getType()
-                                : CertificateType.DEGREE)
+                                : CertificateType.CERTIFICATION)
 
                         .title(request != null
                                 ? request.getTitle()

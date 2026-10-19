@@ -21,19 +21,23 @@ public class TranscriptQueryService {
     private final SecurityContextService securityContextService;
     private final TranscriptMapper transcriptMapper;
 
-    public Transcript getByPublicId(UUID publicId) {
+    public Transcript getByPublicId(
+            UUID publicId) {
+        Long institutionId = securityContextService.getInstitutionId();
 
-        Long institutionId =
-                securityContextService.getInstitutionId();
+        return getByPublicId(publicId, institutionId);
+    }
+
+    public Transcript getByPublicId(
+            UUID publicId,
+            Long institutionId) {
 
         return repository
                 .findByPublicIdAndInstitutionId(
                         publicId,
-                        institutionId
-                )
+                        institutionId)
                 .orElseThrow(() ->
-                        new RuntimeException(
-                                "Transcript not found"));
+                        new RuntimeException("Transcript not found"));
     }
 
     public TranscriptResponse toResponse(

@@ -26,6 +26,11 @@ spring:
 server:
   port: ${SERVER_PORT:8081}
 
+cervalid:
+  demo:
+    enabled: ${CERVALID_DEMO_ENABLED:false}
+    password: ${CERVALID_DEMO_PASSWORD:}
+
 app:
   superadmin:
     email: ${SUPERADMIN_EMAIL}
@@ -39,6 +44,9 @@ app:
 
   credential:
     verification-url: /verify/credential
+
+  cookie:
+    secure: false
 
   jwt:
     secret: ${JWT_SECRET}

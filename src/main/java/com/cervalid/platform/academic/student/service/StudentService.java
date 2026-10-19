@@ -4,7 +4,6 @@ import com.cervalid.platform.academic.student.domain.StudentBusinessRules;
 import com.cervalid.platform.academic.student.domain.StudentCodeNormalizer;
 import com.cervalid.platform.academic.student.domain.StudentCodeValidator;
 import com.cervalid.platform.academic.student.dto.internal.CreateStudentCommand;
-import com.cervalid.platform.academic.student.dto.request.CreateStudentRequest;
 import com.cervalid.platform.academic.student.entity.Student;
 import com.cervalid.platform.academic.student.enums.StudentStatus;
 import com.cervalid.platform.academic.student.event.StudentCreatedEvent;
@@ -15,16 +14,12 @@ import com.cervalid.platform.academic.timeline.enums.TimelineEventSource;
 import com.cervalid.platform.academic.timeline.enums.TimelineEventType;
 import com.cervalid.platform.academic.timeline.enums.TimelineReferenceType;
 import com.cervalid.platform.academic.timeline.service.TimelineEventService;
-import com.cervalid.platform.security.context.SecurityContextService;
 import com.cervalid.platform.shared.identity.PublicIdGenerator;
 import com.cervalid.platform.user.entity.InstitutionUser;
-import com.cervalid.platform.user.entity.User;
 import com.cervalid.platform.user.repository.InstitutionUserRepository;
-import com.cervalid.platform.user.repository.UserRepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.Map;
@@ -34,6 +29,7 @@ import java.util.Map;
 public class StudentService {
 
     private final StudentRepository studentRepository;
+    private final InstitutionUserRepository institutionUserRepository;
     private final StudentEventPublisher eventPublisher;
     private final PublicIdGenerator publicIdGenerator;
     private final StudentCodeValidator studentCodeValidator;
@@ -45,6 +41,8 @@ public class StudentService {
     public Student createStudent(
             CreateStudentCommand request,
             StudentStatus status) {
+
+        validateMembership(request);
 
         studentRepository
                 .findByInstitutionMembershipId(
@@ -66,14 +64,11 @@ public class StudentService {
                         request.getStudentCode());
 
         // validar
-        if (studentRepository
-                .existsByInstitutionIdAndStudentCode(
+        if (studentRepository.existsByInstitutionIdAndStudentCode(
                         request.getInstitutionId(),
-                        normalizedCode)
-        ) {
-
+                        normalizedCode)) {
             throw new RuntimeException(
-                    "Student code already exists in institution");
+                    "studentCode no existe en la institución");
         }
 
         Student student = Student.builder()
@@ -115,12 +110,19 @@ public class StudentService {
     private void publishStudentCreated(
             Student student) {
 
-        JsonNode metadata = timelineMetadataBuilder.build(
-                Map.of(
-                        "studentCode", student.getStudentCode(),
-                        "admissionDate", student.getAdmissionDate(),
-                        "graduationDate", student.getGraduationDate()
-                ));
+        Map<String, Object> metadataValues = new java.util.HashMap<>();
+
+        metadataValues.put("studentCode", student.getStudentCode());
+        metadataValues.put("admissionDate", student.getAdmissionDate());
+
+        if (student.getGraduationDate() != null) {
+            metadataValues.put(
+                    "graduationDate",
+                    student.getGraduationDate()
+            );
+        }
+
+        JsonNode metadata = timelineMetadataBuilder.build(metadataValues);
 
         timelineEventService.createEvent(
                 student.getInstitutionId(),
@@ -142,6 +144,29 @@ public class StudentService {
                         LocalDateTime.now()
                 )
         );
+    }
+
+    // valida que el usuario, la pertenencia y la institución coincidan
+    private void validateMembership(
+            CreateStudentCommand request) {
+        InstitutionUser membership = institutionUserRepository
+                .findById(request.getInstitutionMembershipId())
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "La pertenencia institucional no existe"
+                ));
+
+        if (!membership.getUser().getId().equals(request.getUserId())) {
+            throw new IllegalArgumentException(
+                    "La pertenencia no corresponde al usuario indicado"
+            );
+        }
+
+        if (!membership.getInstitution().getId()
+                .equals(request.getInstitutionId())) {
+            throw new IllegalArgumentException(
+                    "La pertenencia no corresponde a la institución indicada"
+            );
+        }
     }
 
 }

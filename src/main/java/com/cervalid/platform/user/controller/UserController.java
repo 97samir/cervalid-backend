@@ -1,8 +1,12 @@
 package com.cervalid.platform.user.controller;
 
 import com.cervalid.platform.common.enums.RoleName;
-import com.cervalid.platform.user.dto.*;
-import com.cervalid.platform.user.entity.User;
+import com.cervalid.platform.user.dto.filter.UserFilterRequest;
+import com.cervalid.platform.user.dto.request.CreateUserRequest;
+import com.cervalid.platform.user.dto.request.LinkInstitutionRequest;
+import com.cervalid.platform.user.dto.request.UpdateUserRequest;
+import com.cervalid.platform.user.dto.request.UpdateUserRoleRequest;
+import com.cervalid.platform.user.dto.response.UserResponse;
 import com.cervalid.platform.user.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -18,7 +22,7 @@ public class UserController {
 
     private final UserService userService;
 
-    // para listar usuarios
+    // Listar usuarios según el contexto y los filtros
     @PreAuthorize("hasAuthority('VIEW_USERS')")
     @GetMapping
     public Page<UserResponse> listUsers(
@@ -35,7 +39,7 @@ public class UserController {
         return userService.listUsers(filter, pageable);
     }
 
-    // listar usuarios para el frontend superadmin
+    // Listar usuarios para el superadministrador
     @PreAuthorize("hasRole('SUPER_ADMIN')")
     @GetMapping("/admin")
     public Page<UserResponse> listAllUsers(
@@ -52,7 +56,7 @@ public class UserController {
         return userService.listAllUsers(filter, pageable);
     }
 
-    // listar los usuarios de una institución en especifica
+    // Listar usuarios de la institución activa
     @PreAuthorize("hasAuthority('VIEW_USERS')")
     @GetMapping("/institution")
     public Page<UserResponse> listInstitutionUsers(
@@ -67,58 +71,65 @@ public class UserController {
         return userService.listUsersByInstitution(filter, pageable);
     }
 
-    // ver un usuario específico
+    // Consultar un usuario específico
     @PreAuthorize("hasAuthority('VIEW_USERS')")
     @GetMapping("/{id}")
-    public User getUser(@PathVariable Long id) {
+    public UserResponse getUser(
+            @PathVariable Long id) {
         return userService.getUser(id);
     }
 
-    // crear usuario
+    // Crear usuario
     @PreAuthorize("hasAuthority('CREATE_USER')")
     @PostMapping
-    public User createUser(
+    public UserResponse createUser(
             @RequestBody CreateUserRequest request) {
 
         return userService.createUser(request);
     }
 
+    // Eliminar usuario o su pertenencia institucional
     @PreAuthorize("hasAuthority('DELETE_USER')")
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
+    public ResponseEntity<Void> deleteUser(
+            @PathVariable Long id) {
+
         userService.deleteUser(id);
+
         return ResponseEntity.noContent().build();
     }
 
-    // endpoint PATCH - actualizar rol - EDIT_USER
+    // Actualizar el rol de un usuario
     @PreAuthorize("hasAuthority('EDIT_USER')")
     @PatchMapping("/{id}/role")
-    public ResponseEntity<?> updateUserRole(
+    public ResponseEntity<String> updateUserRole(
             @PathVariable Long id,
             @RequestBody UpdateUserRoleRequest request) {
 
         userService.updateUserRole(id, request);
+
         return ResponseEntity.ok("Rol actualizado correctamente");
     }
 
-    // endpoint PATCH - actualizar usuario
+    // Actualizar datos comunes del usuario
     @PreAuthorize("hasAuthority('EDIT_USER')")
     @PatchMapping("/{id}")
-    public ResponseEntity<User> updateUser(
+    public ResponseEntity<UserResponse> updateUser(
             @PathVariable Long id,
             @RequestBody UpdateUserRequest request) {
 
-        User updated = userService.updateUser(id, request);
+        UserResponse updated = userService.updateUser(id, request);
+
         return ResponseEntity.ok(updated);
     }
 
+    // Vincular un usuario existente a otra institución
     @PostMapping("/link-institution")
-    public ResponseEntity<?> linkInstitution(
+    public ResponseEntity<String> linkInstitution(
             @RequestBody LinkInstitutionRequest request) {
 
         userService.linkInstitution(request);
 
         return ResponseEntity.ok("Usuario vinculado a la institución");
     }
-
 }

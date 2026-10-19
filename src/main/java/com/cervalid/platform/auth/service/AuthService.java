@@ -1,11 +1,15 @@
+
 package com.cervalid.platform.auth.service;
 
-import com.cervalid.platform.auth.dto.*;
+import com.cervalid.platform.auth.dto.response.AuthTokenResponse;
+import com.cervalid.platform.auth.dto.response.InstitutionOption;
+import com.cervalid.platform.auth.dto.response.LoginResponse;
+import com.cervalid.platform.auth.dto.request.SelectInstitutionRequest;
 import com.cervalid.platform.auth.entity.UserRefreshToken;
+import com.cervalid.platform.auth.mapper.AuthMapper;
 import com.cervalid.platform.auth.repository.UserRefreshTokenRepository;
 import com.cervalid.platform.common.enums.RoleName;
 import com.cervalid.platform.security.context.SecurityContextService;
-import com.cervalid.platform.security.context.UserContext;
 import com.cervalid.platform.security.jwt.JwtService;
 import com.cervalid.platform.user.entity.InstitutionUser;
 import com.cervalid.platform.user.entity.User;
@@ -15,6 +19,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,194 +33,464 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
     private final UserRepository userRepository;
     private final InstitutionUserRepository institutionUserRepository;
-    private final JwtService jwtService;
     private final UserRefreshTokenRepository refreshTokenRepository;
+
+    private final AuthMapper authMapper;
     private final SecurityContextService securityContextService;
+    private final JwtService jwtService;
 
-    @Value("${app.superadmin.email}")
-    private String superAdminEmail;
+    @Value("${app.jwt.refresh-expiration}")
+    private long refreshExpirationMillis;
 
-    // LOGIN PRINCIPAL
+    // LOGIN
+    @Transactional
     public LoginResponse login(String email, String password) {
-
-        String normalizedEmail = email.toLowerCase().trim();
-
-        // autenticar credenciales
-        authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(normalizedEmail, password)
-        );
-
-        // obtener usuario global
-        User user = userRepository.findByEmailIgnoreCase(normalizedEmail)
-                .orElseThrow(() -> new RuntimeException("Credenciales inválidas"));
-
-        // caso SUPER ADMIN
-        if (user.getEmail().equalsIgnoreCase(superAdminEmail)) {
-
-            String token = jwtService.generateSuperAdminToken(user);
-            String refreshToken = jwtService.generateRefreshToken(user);
-
-            return LoginResponse.superAdmin(token, refreshToken);
+        if (email == null || email.isBlank()
+                || password == null || password.isBlank()) {
+            throw new IllegalArgumentException(
+                    "Correo y contraseña son obligatorios"
+            );
         }
 
-        // buscar instituciones activas
+        String normalizedEmail = email.trim();
+
+        Authentication authentication =
+                authenticationManager.authenticate(
+                        new UsernamePasswordAuthenticationToken(
+                                normalizedEmail,
+                                password
+                        )
+                );
+
+        User user = userRepository.findByEmailIgnoreCase(
+                        authentication.getName()
+                )
+                .orElseThrow(() ->
+                        new IllegalStateException(
+                                "Usuario autenticado no encontrado"
+                        )
+                );
+
+        if (!user.isActive()) {
+            throw new IllegalStateException("Usuario inactivo");
+        }
+
+        // Superadministrador: el rol global es la fuente de verdad.
+        if (user.getGlobalRole() == RoleName.SUPER_ADMIN) {
+            String accessToken =
+                    jwtService.generateSuperAdminToken(user);
+
+            String refreshToken =
+                    persistRefreshToken(
+                            user,
+                            jwtService.generateSuperAdminRefreshToken(
+                                    user,
+                                    null
+                            )
+                    );
+
+            return LoginResponse.superAdmin(
+                    accessToken,
+                    refreshToken
+            );
+        }
+
         List<InstitutionUser> relations =
-                institutionUserRepository.findByUserIdAndActiveTrue(user.getId());
+                institutionUserRepository
+                        .findByUserIdAndActiveTrue(user.getId());
 
         if (relations.isEmpty()) {
-            throw new RuntimeException("Usuario sin institución activa");
+            throw new IllegalStateException(
+                    "El usuario no tiene instituciones activas"
+            );
         }
-        // si solo tiene una institución -> generar token directo
+
         if (relations.size() == 1) {
+            InstitutionUser relation = relations.get(0);
 
-            String token = jwtService.generateToken(relations.get(0));
-            String refreshToken = jwtService.generateRefreshToken(user);
-            return LoginResponse.singleInstitution(token, refreshToken);
+            String accessToken =
+                    jwtService.generateToken(relation);
+
+            String refreshToken =
+                    persistRefreshToken(
+                            user,
+                            jwtService.generateRefreshToken(relation)
+                    );
+
+            return LoginResponse.singleInstitution(
+                    accessToken,
+                    refreshToken
+            );
         }
 
-        // si tiene varias -> devolver opciones
-        List<InstitutionOption> options = relations.stream()
-                .map(rel -> {
+        List<InstitutionOption> options =
+                authMapper.toInstitutionOptions(relations);
 
-                    InstitutionOption option = new InstitutionOption();
+        String selectionToken =
+                jwtService.generateInstitutionSelectionToken(user);
 
-                    option.setInstitutionUserId(rel.getId());
-                    option.setInstitutionId(rel.getInstitution().getId());
-                    option.setInstitutionName(rel.getInstitution().getName());
-                    option.setRole(rel.getRole().getName().toString());
-
-                    return option;
-
-                }).toList();
-
-        return LoginResponse.multiInstitution(user.getId(), options);
+        // validar seleccion multiple
+        return LoginResponse.multiInstitution(
+                user.getId(),
+                options,
+                selectionToken
+        );
     }
 
-    // SELECCIÓN DE INSTITUCIÓN
+    // LOGOUT
     @Transactional
-    public AuthTokenResponse selectInstitution(SelectInstitutionRequest request) {
-
-        System.out.println("=== SELECT INSTITUTION DEBUG ===");
-        System.out.println("Request payload: " + request);
-
-        if (request == null) {
-            throw new RuntimeException("Request no puede ser nulo");
+    public void logout(String refreshToken) {
+        if (refreshToken == null || refreshToken.isBlank()) {
+            return;
         }
 
-        // SUPER_ADMIN
-        if (request.getInstitutionUserId() == null && request.getInstitutionId() != null) {
+        refreshTokenRepository
+                .findByTokenAndRevokedFalse(refreshToken)
+                .ifPresent(savedToken -> {
+                    savedToken.setRevoked(true);
+                    refreshTokenRepository.save(savedToken);
+                });
+    }
 
-            System.out.println("Entrando como SUPER_ADMIN");
+    // SELECT INSTITUTION
+    @Transactional
+    public AuthTokenResponse selectInstitution(
+            SelectInstitutionRequest request,
+            String selectionToken
+    ) {
+        if (request == null) {
+            throw new IllegalArgumentException(
+                    "La solicitud es obligatoria"
+            );
+        }
 
-            // usar security context para el superadmin
-            Long userId = securityContextService.getUserId();
+        Long currentUserId;
 
-            if (userId == null) {
-                throw new RuntimeException("No se pudo obtener el usuario desde el token");
+        if (selectionToken != null && !selectionToken.isBlank()) {
+            if (!jwtService.isInstitutionSelectionTokenValid(
+                    selectionToken
+            )) {
+                throw new IllegalArgumentException(
+                        "El desafío de selección es inválido o ha vencido"
+                );
             }
 
-            User user = userRepository.findById(userId)
-                    .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+            var claims = jwtService.extractAllClaims(selectionToken);
 
-            String token = jwtService.generateSuperAdminInstitutionToken(
-                    user,
-                    request.getInstitutionId()
+            currentUserId = readOptionalLongClaim(claims, "userId");
+
+            if (currentUserId == null || currentUserId <= 0) {
+                throw new IllegalArgumentException(
+                        "El desafío no contiene un usuario válido"
+                );
+            }
+
+            User challengeUser = userRepository.findById(currentUserId)
+                    .orElseThrow(() -> new IllegalArgumentException(
+                            "Usuario no encontrado"
+                    ));
+
+            if (!challengeUser.isActive()
+                    || !challengeUser.getEmail().equalsIgnoreCase(
+                    claims.getSubject()
+            )) {
+                throw new IllegalArgumentException(
+                        "El desafío no corresponde a un usuario activo"
+                );
+            }
+        } else {
+            // Permite el flujo existente del superadministrador,
+            // que ya tiene una sesión autenticada.
+            currentUserId = securityContextService.getUserId();
+
+            if (currentUserId == null) {
+                throw new IllegalStateException(
+                        "Se requiere un desafío de selección válido "
+                                + "o una sesión autenticada"
+                );
+            }
+        }
+
+        User currentUser = userRepository.findById(currentUserId)
+                .orElseThrow(() ->
+                        new IllegalStateException(
+                                "Usuario no encontrado"
+                        )
+                );
+
+        // Superadministrador que selecciona una institución.
+        if (currentUser.getGlobalRole() == RoleName.SUPER_ADMIN
+                && request.getInstitutionUserId() == null
+                && request.getInstitutionId() != null) {
+
+            // Validar que la institución exista.
+            // Se implementará con InstitutionRepository en el siguiente ajuste.
+            String accessToken =
+                    jwtService.generateSuperAdminInstitutionToken(
+                            currentUser,
+                            request.getInstitutionId()
+                    );
+
+            String refreshToken = persistRefreshToken(
+                    currentUser,
+                    jwtService.generateSuperAdminRefreshToken(
+                            currentUser,
+                            request.getInstitutionId()
+                    )
             );
 
-            String refreshToken = saveRefreshToken(user);
-
-            return new AuthTokenResponse(token, refreshToken);
+            return new AuthTokenResponse(accessToken, refreshToken);
         }
 
-        // USUARIO NORMAL
         if (request.getInstitutionUserId() == null) {
-            throw new RuntimeException("institutionUserId es requerido");
+            throw new IllegalArgumentException(
+                    "institutionUserId es obligatorio"
+            );
         }
 
-        System.out.println("Entrando como USUARIO NORMAL");
-
-        InstitutionUser relation = institutionUserRepository
-                .findByIdWithInstitutionAndRole(request.getInstitutionUserId())
-                .orElseThrow(() -> new RuntimeException("Relación no encontrada"));
+        InstitutionUser relation =
+                institutionUserRepository
+                        .findByIdWithInstitutionAndRole(
+                                request.getInstitutionUserId()
+                        )
+                        .orElseThrow(() ->
+                                new IllegalArgumentException(
+                                        "Membresía no encontrada"
+                                )
+                        );
 
         if (!relation.isActive()) {
-            throw new RuntimeException("Institución desactivada");
+            throw new IllegalStateException(
+                    "La membresía institucional está inactiva"
+            );
         }
 
-        User user = relation.getUser();
+        // Evita seleccionar la membresía de otro usuario.
+        if (!relation.getUser().getId().equals(currentUserId)) {
+            throw new IllegalArgumentException(
+                    "La membresía no pertenece al usuario autenticado"
+            );
+        }
 
-        String token = jwtService.generateToken(relation);
-        String refreshToken = saveRefreshToken(user);
+        // Si el cliente también envía institutionId, debe coincidir.
+        if (request.getInstitutionId() != null
+                && !request.getInstitutionId().equals(
+                relation.getInstitution().getId()
+        )) {
+            throw new IllegalArgumentException(
+                    "La institución no coincide con la membresía"
+            );
+        }
 
-        return new AuthTokenResponse(token, refreshToken);
+        String accessToken = jwtService.generateToken(relation);
+
+        String refreshToken = persistRefreshToken(
+                currentUser,
+                jwtService.generateRefreshToken(relation)
+        );
+
+        return new AuthTokenResponse(accessToken, refreshToken);
     }
 
-    // metodo para salir de instituion bajo contexto (caso superadmin)
+    // EXIT INSTITUTION
     @Transactional
     public AuthTokenResponse exitInstitution() {
-
         Long userId = securityContextService.getUserId();
 
         if (userId == null) {
-            throw new RuntimeException("Usuario no autenticado");
+            throw new IllegalStateException(
+                    "El usuario no está autenticado"
+            );
         }
 
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+                .orElseThrow(() ->
+                        new IllegalStateException(
+                                "Usuario no encontrado"
+                        )
+                );
 
-        if (user.getGlobalRole() == null) {
-            throw new RuntimeException("El usuario no tiene rol global");
+        if (user.getGlobalRole() != RoleName.SUPER_ADMIN) {
+            throw new IllegalStateException(
+                    "Solo el superadministrador puede salir del contexto institucional"
+            );
         }
-        // generar token SIN institutionId
-        String token = jwtService.generateTokenWithoutInstitution(user);
-        String refreshToken = saveRefreshToken(user);
 
-        return new AuthTokenResponse(token, refreshToken);
+        String accessToken =
+                jwtService.generateTokenWithoutInstitution(user);
+
+        String refreshToken = persistRefreshToken(
+                user,
+                jwtService.generateSuperAdminRefreshToken(user, null)
+        );
+
+        return new AuthTokenResponse(accessToken, refreshToken);
     }
 
+    // REFRESH TOKEN
     @Transactional
-    public AuthTokenResponse refreshToken(String refreshToken){
-        // Validar refresh token en DB
-        UserRefreshToken savedToken = refreshTokenRepository.findByTokenAndRevokedFalse(refreshToken)
-                .orElseThrow(() -> new RuntimeException("Refresh token inválido"));
+    public AuthTokenResponse refreshToken(String refreshToken) {
+        if (refreshToken == null || refreshToken.isBlank()
+                || !jwtService.isRefreshTokenValid(refreshToken)) {
+            throw new IllegalArgumentException(
+                    "Refresh token inválido o vencido"
+            );
+        }
+
+        UserRefreshToken savedToken =
+                refreshTokenRepository
+                        .findByTokenAndRevokedFalse(refreshToken)
+                        .orElseThrow(() ->
+                                new IllegalArgumentException(
+                                        "Refresh token revocado o inexistente"
+                                )
+                        );
+
+        if (!savedToken.getExpiresAt().isAfter(Instant.now())) {
+            savedToken.setRevoked(true);
+            throw new IllegalArgumentException(
+                    "Refresh token vencido"
+            );
+        }
+
+        var claims = jwtService.extractAllClaims(refreshToken);
 
         User user = savedToken.getUser();
 
-        // Revocar token antiguo
-        savedToken.setRevoked(true);
-        refreshTokenRepository.save(savedToken);
-        // Caso SUPER_ADMIN
-        if(user.getEmail().equalsIgnoreCase(superAdminEmail)){
-            String newToken = jwtService.generateSuperAdminToken(user);
-            String newRefreshToken = saveRefreshToken(user); // guarda nuevo refresh token en DB
-            return new AuthTokenResponse(newToken, newRefreshToken);
+        Long tokenUserId = Long.valueOf(
+                claims.get("userId").toString()
+        );
+
+        if (!user.getId().equals(tokenUserId)
+                || !user.isActive()) {
+            savedToken.setRevoked(true);
+
+            throw new IllegalArgumentException(
+                    "El refresh token no corresponde a un usuario activo"
+            );
         }
-        // Usuario institucional
-        InstitutionUser relation = institutionUserRepository
-                .findFirstByUserIdAndActiveTrue(user.getId())
-                .orElseThrow(() -> new RuntimeException("Usuario sin institución activa"));
 
-        String newToken = jwtService.generateToken(relation);
-        String newRefreshToken = saveRefreshToken(user); // nuevo refresh token en DB
+        String role = claims.get("role", String.class);
+        Long institutionId = readOptionalLongClaim(
+                claims, "institutionId"
+        );
+        Long institutionUserId = readOptionalLongClaim(
+                claims, "institutionUserId"
+        );
 
-        return new AuthTokenResponse(newToken, newRefreshToken);
+        String accessToken;
+        String replacementRefreshToken;
+
+        if (user.getGlobalRole() == RoleName.SUPER_ADMIN) {
+            if (!RoleName.SUPER_ADMIN.name().equals(role)) {
+                throw new IllegalArgumentException(
+                        "Rol de refresh token inválido"
+                );
+            }
+
+            accessToken =
+                    jwtService.generateSuperAdminInstitutionToken(
+                            user,
+                            institutionId
+                    );
+
+            replacementRefreshToken =
+                    jwtService.generateSuperAdminRefreshToken(
+                            user,
+                            institutionId
+                    );
+        } else {
+            if (institutionUserId == null || institutionId == null) {
+                throw new IllegalArgumentException(
+                        "El refresh token no contiene el contexto institucional"
+                );
+            }
+
+            InstitutionUser relation =
+                    institutionUserRepository
+                            .findByIdWithInstitutionAndRole(
+                                    institutionUserId
+                            )
+                            .orElseThrow(() ->
+                                    new IllegalArgumentException(
+                                            "Membresía institucional no encontrada"
+                                    )
+                            );
+
+            boolean validContext =
+                    relation.isActive()
+                            && relation.getUser().getId().equals(user.getId())
+                            && relation.getInstitution().getId()
+                            .equals(institutionId)
+                            && relation.getRole().getName().name()
+                            .equals(role);
+
+            if (!validContext) {
+                throw new IllegalArgumentException(
+                        "El contexto institucional del refresh token ya no es válido"
+                );
+            }
+
+            accessToken = jwtService.generateToken(relation);
+
+            replacementRefreshToken =
+                    jwtService.generateRefreshToken(relation);
+        }
+
+        savedToken.setRevoked(true);
+
+        String persistedReplacement = persistRefreshToken(
+                user,
+                replacementRefreshToken
+        );
+
+        return new AuthTokenResponse(
+                accessToken,
+                persistedReplacement
+        );
     }
 
-    // metodo para renovar refresh token para el frontend
-    private String saveRefreshToken(User user) {
-        // borrar tokens antiguos
+    // PRIVATE HELPERS
+    private String persistRefreshToken(
+            User user,
+            String token
+    ) {
+        // un solo refresh token por usuario
         refreshTokenRepository.deleteByUser(user);
 
-        String refreshToken = jwtService.generateRefreshToken(user);
-        UserRefreshToken entity = UserRefreshToken.builder()
-                .user(user)
-                .token(refreshToken)
-                .expiresAt(Instant.now().plusSeconds(60 * 60 * 24 * 30)) // 30 días
-                .revoked(false)
-                .build();
-        refreshTokenRepository.save(entity);
+        Instant expiresAt = Instant.now().plusMillis(
+                refreshExpirationMillis
+        );
 
-        return refreshToken;
+        refreshTokenRepository.save(
+                UserRefreshToken.builder()
+                        .user(user)
+                        .token(token)
+                        .expiresAt(expiresAt)
+                        .revoked(false)
+                        .build()
+        );
+
+        return token;
     }
 
+    private Long readOptionalLongClaim(
+            io.jsonwebtoken.Claims claims,
+            String claimName
+    ) {
+        Object value = claims.get(claimName);
+
+        if (value == null) {
+            return null;
+        }
+
+        try {
+            return Long.valueOf(value.toString());
+        } catch (NumberFormatException ex) {
+            throw new IllegalArgumentException(
+                    "Claim numérico inválido: " + claimName,
+                    ex
+            );
+        }
+    }
 }

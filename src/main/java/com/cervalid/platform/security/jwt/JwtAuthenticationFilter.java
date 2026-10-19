@@ -1,163 +1,200 @@
+
 package com.cervalid.platform.security.jwt;
-// Lee el token, Valida, Carga usuario, Inyecta institutionId al contexto
+
 import com.cervalid.platform.common.enums.RoleName;
 import com.cervalid.platform.security.context.UserContext;
 import com.cervalid.platform.security.service.CustomUserDetailsService;
 import com.cervalid.platform.security.user.CustomUserDetails;
 import io.jsonwebtoken.Claims;
-import jakarta.servlet.*;
-import jakarta.servlet.http.*;
+import io.jsonwebtoken.JwtException;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.authentication.*;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.util.List;
 
 @Component
 @RequiredArgsConstructor
-public class JwtAuthenticationFilter
-        extends OncePerRequestFilter {
+public class JwtAuthenticationFilter extends OncePerRequestFilter {
+
+    private static final Logger log =
+            LoggerFactory.getLogger(JwtAuthenticationFilter.class);
+
+    private static final String AUTH_COOKIE = "cervalid_token";
 
     private final JwtService jwtService;
     private final CustomUserDetailsService userDetailsService;
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request,
-                                    HttpServletResponse response,
-                                    FilterChain filterChain)
-            throws ServletException, IOException {
+    protected void doFilterInternal(
+            HttpServletRequest request,
+            HttpServletResponse response,
+            FilterChain filterChain
+    ) throws ServletException, IOException {
 
         try {
+            String token = resolveToken(request);
 
-            String token = null;
-            // intenta obtener desde authorization header
-            final String authHeader = request.getHeader("Authorization");
-
-            if (authHeader != null && authHeader.startsWith("Bearer ")) {
-                token = authHeader.substring(7);
-            }
-            // si no hay header -> buscar en cookies
-            if (token == null && request.getCookies() != null) {
-                for (Cookie cookie : request.getCookies()) {
-                    if ("cervalid_token".equals(cookie.getName())) {
-                        token = cookie.getValue();
-                    }
-                }
-            }
-            // si no hay token -> continuar
-            if (token == null) {
-                filterChain.doFilter(request, response);
-                return;
+            if (token != null && !token.isBlank()) {
+                authenticateRequest(token, request);
             }
 
-            boolean isValid = false;
-
-            try {
-                isValid = jwtService.isTokenValid(token);
-            } catch (Exception e) {
-                System.out.println("ERROR VALIDANDO TOKEN: " + e.getMessage());
-            }
-
-            System.out.println("TOKEN VALIDO: " + isValid);
-
-            if (!isValid) {
-                System.out.println("TOKEN INVALIDO - NO AUTENTICA");
-                filterChain.doFilter(request, response);
-                return;
-            }
-
-            // Extraer claims
-            Claims claims = jwtService.extractAllClaims(token);
-            String username = claims.getSubject();
-
-            // EXTRAER ROLE E INSTITUTION
-            String roleClaim = claims.get("role", String.class);
-            Object institutionIdClaim = claims.get("institutionId");
-
-            // Cargar usuario Spring Security
-            CustomUserDetails userDetails;
-            try {
-                userDetails = (CustomUserDetails)
-                        userDetailsService.loadUserByUsername(username);
-            } catch (Exception e) {
-                System.out.println("USUARIO JWT NO EXISTE");
-                filterChain.doFilter(request, response);
-                return;
-            }
-
-            UsernamePasswordAuthenticationToken authentication =
-                    new UsernamePasswordAuthenticationToken(
-                            userDetails,
-                            null,
-                            userDetails.getAuthorities()
-                    );
-
-            System.out.println("=== JWT DEBUG ===");
-            System.out.println("ROLE JWT: " + roleClaim);
-            System.out.println("AUTHORITIES SET: " + userDetails.getAuthorities());
-            System.out.println("INSTITUTION JWT: " + institutionIdClaim);
-
-            authentication.setDetails(
-                    new WebAuthenticationDetailsSource()
-                            .buildDetails(request)
-            );
-
-            SecurityContextHolder.getContext()
-                    .setAuthentication(authentication);
-
-            // Inyectar datos al UserContext
-            UserContext.setUserId(userDetails.getUserId());
-            UserContext.setInstitutionUserId(
-                    userDetails.getInstitutionUserId()
-            );
-
-            if (roleClaim != null) {
-                UserContext.setRole(RoleName.valueOf(roleClaim));
-            }
-
-            if (institutionIdClaim != null) {
-                try {
-                    Long institutionId = Long.valueOf(institutionIdClaim.toString());
-
-                    if (institutionId <= 0) {
-                        throw new IllegalArgumentException("Invalid institutionId");
-                    }
-
-                    UserContext.setInstitutionId(institutionId);
-
-                } catch (Exception e) {
-                    System.out.println("ERROR parsing institutionId: " + institutionIdClaim);
-                    e.printStackTrace();
-
-                    // NO ROMPE REQUEST
-                    filterChain.doFilter(request, response);
-                    return;
-                }
-            }
-
-            // DEBUG
-            System.out.println("ROL JWT: " + roleClaim);
-            System.out.println("INSTITUTION JWT: " + institutionIdClaim);
-
-            filterChain.doFilter(request, response);
-
-        } catch (Exception e) {
-
-            e.printStackTrace();
-
-            // NO rompe servidor
-            filterChain.doFilter(request, response);
-
-        } finally {
-            //Limpieza obligatoria del contexto por seguridad
+        } catch (
+                JwtException |
+                IllegalArgumentException |
+                AuthenticationException ex
+        ) {
             SecurityContextHolder.clearContext();
             UserContext.clear();
 
+            log.debug(
+                    "Autenticación JWT rechazada: {}",
+                    ex.getClass().getSimpleName()
+            );
+        }
+
+        try {
+            filterChain.doFilter(request, response);
+        } finally {
+            UserContext.clear();
+        }
+    }
+
+    private void authenticateRequest(
+            String token,
+            HttpServletRequest request
+    ) {
+        // Solo se permiten tokens de acceso, no refresh tokens.
+        if (!jwtService.isTokenValid(token)) {
+            throw new IllegalArgumentException(
+                    "Token de acceso inválido o expirado"
+            );
+        }
+
+        Claims claims = jwtService.extractAllClaims(token);
+
+        String email = claims.getSubject();
+        String role = claims.get("role", String.class);
+
+        if (email == null || email.isBlank()
+                || role == null || role.isBlank()) {
+            throw new IllegalArgumentException(
+                    "Claims de autenticación incompletos"
+            );
+        }
+
+        Long userId = readLongClaim(claims, "userId");
+        Long institutionId =
+                readOptionalLongClaim(claims, "institutionId");
+        Long institutionUserId =
+                readOptionalLongClaim(claims, "institutionUserId");
+
+        if (userId <= 0
+                || (institutionId != null && institutionId <= 0)
+                || (institutionUserId != null && institutionUserId <= 0)) {
+            throw new IllegalArgumentException(
+                    "Claims de identificación inválidos"
+            );
+        }
+
+        CustomUserDetails userDetails =
+                userDetailsService.loadUserByUsernameAndContext(
+                        email,
+                        userId,
+                        institutionUserId,
+                        institutionId,
+                        role
+                );
+
+        UsernamePasswordAuthenticationToken authentication =
+                new UsernamePasswordAuthenticationToken(
+                        userDetails,
+                        null,
+                        userDetails.getAuthorities()
+                );
+
+        authentication.setDetails(
+                new WebAuthenticationDetailsSource()
+                        .buildDetails(request)
+        );
+
+        SecurityContextHolder.getContext()
+                .setAuthentication(authentication);
+
+        UserContext.setUserId(userDetails.getUserId());
+        UserContext.setInstitutionUserId(
+                userDetails.getInstitutionUserId()
+        );
+        UserContext.setRole(RoleName.valueOf(role));
+
+        if (institutionId != null) {
+            UserContext.setInstitutionId(institutionId);
+        }
+    }
+
+    private String resolveToken(HttpServletRequest request) {
+        String authorization = request.getHeader("Authorization");
+
+        if (authorization != null
+                && authorization.startsWith("Bearer ")) {
+
+            String bearerToken = authorization.substring(7).trim();
+
+            if (!bearerToken.isEmpty()) {
+                return bearerToken;
+            }
+        }
+
+        Cookie[] cookies = request.getCookies();
+
+        if (cookies != null) {
+            for (Cookie cookie : cookies) {
+                if (AUTH_COOKIE.equals(cookie.getName())) {
+                    return cookie.getValue();
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private Long readLongClaim(Claims claims, String name) {
+        Long value = readOptionalLongClaim(claims, name);
+
+        if (value == null) {
+            throw new IllegalArgumentException(
+                    "Falta el claim obligatorio: " + name
+            );
+        }
+
+        return value;
+    }
+
+    private Long readOptionalLongClaim(Claims claims, String name) {
+        Object value = claims.get(name);
+
+        if (value == null) {
+            return null;
+        }
+
+        try {
+            return Long.valueOf(value.toString());
+        } catch (NumberFormatException ex) {
+            throw new IllegalArgumentException(
+                    "Claim numérico inválido: " + name,
+                    ex
+            );
         }
     }
 }

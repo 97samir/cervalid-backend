@@ -1,20 +1,37 @@
 package com.cervalid.platform.security.jwt;
 
+import com.cervalid.platform.common.enums.RoleName;
 import com.cervalid.platform.user.entity.InstitutionUser;
 import com.cervalid.platform.user.entity.User;
-import io.jsonwebtoken.*;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtException;
+import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
 
 @Service
 public class JwtService {
+
+    private static final String CLAIM_USER_ID = "userId";
+    private static final String CLAIM_ROLE = "role";
+    private static final String CLAIM_INSTITUTION_ID = "institutionId";
+    private static final String CLAIM_INSTITUTION_USER_ID = "institutionUserId";
+    private static final String CLAIM_TOKEN_TYPE = "tokenType";
+
+    private static final String ACCESS_TOKEN = "ACCESS";
+    private static final String REFRESH_TOKEN = "REFRESH";
+
+    private static final String INSTITUTION_SELECTION_TOKEN =
+            "INSTITUTION_SELECTION";
+
+    private static final long INSTITUTION_SELECTION_EXPIRATION =
+            5 * 60 * 1000L;
 
     @Value("${app.jwt.secret}")
     private String jwtSecret;
@@ -28,80 +45,149 @@ public class JwtService {
     private Key key;
 
     @PostConstruct
-    public void init(){
-        key = Keys.hmacShaKeyFor(jwtSecret.getBytes());
+    public void init() {
+        key = Keys.hmacShaKeyFor(
+                jwtSecret.getBytes(StandardCharsets.UTF_8)
+        );
     }
 
+    // ACCESS TOKENS
     public String generateToken(InstitutionUser relation) {
-
-        Map<String, Object> claims = new HashMap<>();
-
-        claims.put("userId", relation.getUser().getId());
-        claims.put("role", relation.getRole().getName().toString());
-        claims.put("institutionId", relation.getInstitution().getId());
-        claims.put("institutionUserId", relation.getId());
-
-        return Jwts.builder()
-                .setClaims(claims)
-                .setSubject(relation.getUser().getEmail())
-                .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + jwtExpiration))
-                .signWith(key)
-                .compact();
+        return buildToken(
+                relation.getUser(),
+                relation.getRole().getName().name(),
+                relation.getInstitution().getId(),
+                relation.getId(),
+                ACCESS_TOKEN,
+                jwtExpiration
+        );
     }
 
     public String generateSuperAdminToken(User user) {
+        return generateSuperAdminInstitutionToken(user, null);
+    }
 
-        Map<String, Object> claims = new HashMap<>();
+    public String generateSuperAdminInstitutionToken(
+            User user,
+            Long institutionId
+    ) {
+        return buildToken(
+                user,
+                RoleName.SUPER_ADMIN.name(),
+                institutionId,
+                null,
+                ACCESS_TOKEN,
+                jwtExpiration
+        );
+    }
 
-        claims.put("userId", user.getId());
-        claims.put("role", "SUPER_ADMIN");
-        claims.put("institutionId", null);
+    public String generateTokenWithoutInstitution(User user) {
+        if (user.getGlobalRole() == null) {
+            throw new IllegalStateException(
+                    "El usuario no tiene un rol global configurado"
+            );
+        }
 
-        System.out.println("CLAIMS FULL: " + claims);
+        return buildToken(
+                user,
+                user.getGlobalRole().name(),
+                null,
+                null,
+                ACCESS_TOKEN,
+                jwtExpiration
+        );
+    }
 
-        return Jwts.builder()
-                .setClaims(claims)
+    public String generateInstitutionSelectionToken(User user) {
+        return buildToken(
+                user,
+                INSTITUTION_SELECTION_TOKEN,
+                null,
+                null,
+                INSTITUTION_SELECTION_TOKEN,
+                INSTITUTION_SELECTION_EXPIRATION
+        );
+    }
+
+    public boolean isInstitutionSelectionTokenValid(String token) {
+        try {
+            Claims claims = extractAllClaims(token);
+
+            return INSTITUTION_SELECTION_TOKEN.equals(
+                    claims.get(CLAIM_TOKEN_TYPE, String.class)
+            );
+        } catch (JwtException | IllegalArgumentException ex) {
+            return false;
+        }
+    }
+
+    // REFRESH TOKENS
+    public String generateRefreshToken(InstitutionUser relation) {
+        return buildToken(
+                relation.getUser(),
+                relation.getRole().getName().name(),
+                relation.getInstitution().getId(),
+                relation.getId(),
+                REFRESH_TOKEN,
+                jwtRefreshExpiration
+        );
+    }
+
+    /**
+     * Refresh token para el superadministrador.
+     * institutionId puede ser null si está en contexto global.
+     */
+    public String generateSuperAdminRefreshToken(
+            User user,
+            Long institutionId
+    ) {
+        return buildToken(
+                user,
+                RoleName.SUPER_ADMIN.name(),
+                institutionId,
+                null,
+                REFRESH_TOKEN,
+                jwtRefreshExpiration
+        );
+    }
+
+    private String buildToken(
+            User user,
+            String role,
+            Long institutionId,
+            Long institutionUserId,
+            String tokenType,
+            long expiration
+    ) {
+        var builder = Jwts.builder()
                 .setSubject(user.getEmail())
+                .claim(CLAIM_USER_ID, user.getId())
+                .claim(CLAIM_ROLE, role)
+                .claim(CLAIM_TOKEN_TYPE, tokenType)
                 .setIssuedAt(new Date())
                 .setExpiration(
-                        new Date(System.currentTimeMillis() + jwtExpiration)
-                )
-                .signWith(key)
-                .compact();
+                        new Date(System.currentTimeMillis() + expiration)
+                );
+
+        if (institutionId != null) {
+            builder.claim(CLAIM_INSTITUTION_ID, institutionId);
+        }
+
+        if (institutionUserId != null) {
+            builder.claim(
+                    CLAIM_INSTITUTION_USER_ID,
+                    institutionUserId
+            );
+        }
+
+        return builder.signWith(key).compact();
     }
 
-    // para entrar bajo contexto a una institucion
-    public String generateSuperAdminInstitutionToken(User user, Long institutionId) {
+    // =====================================================
+    // VALIDATION AND CLAIMS
+    // =====================================================
 
-        return Jwts.builder()
-                .setSubject(user.getEmail())
-                .claim("userId", user.getId())
-                .claim("role", "SUPER_ADMIN") // clave
-                //.claim("role", "INSTITUTION_ADMIN") // clave
-                .claim("institutionId", institutionId)
-                //.claim("institutionId", null)
-                .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + jwtExpiration))
-                .signWith(key)
-                .compact();
-    }
-
-    // generar token sin instituion (caso superadmin bajo contexto de login)
-    public String generateTokenWithoutInstitution(User user) {
-
-        return Jwts.builder()
-                .setSubject(user.getEmail())
-                .claim("userId", user.getId())
-                .claim("role", user.getGlobalRole().name())
-                .claim("institutionId", null) // clave
-                .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + jwtExpiration))
-                .signWith(key)
-                .compact();
-    }
-
-        public Claims extractAllClaims(String token) {
+    public Claims extractAllClaims(String token) {
         return Jwts.parserBuilder()
                 .setSigningKey(key)
                 .build()
@@ -115,9 +201,12 @@ public class JwtService {
 
     public boolean isTokenValid(String token) {
         try {
-            extractAllClaims(token);
-            return true;
-        } catch (JwtException e) {
+            Claims claims = extractAllClaims(token);
+
+            return ACCESS_TOKEN.equals(
+                    claims.get(CLAIM_TOKEN_TYPE, String.class)
+            );
+        } catch (JwtException | IllegalArgumentException ex) {
             return false;
         }
     }
@@ -125,42 +214,21 @@ public class JwtService {
     public boolean isRefreshTokenValid(String token) {
         try {
             Claims claims = extractAllClaims(token);
-            return !claims.getExpiration().before(new Date());
-        } catch (Exception e) {
+
+            return REFRESH_TOKEN.equals(
+                    claims.get(CLAIM_TOKEN_TYPE, String.class)
+            );
+        } catch (JwtException | IllegalArgumentException ex) {
             return false;
         }
     }
 
-    public String generateRefreshToken(User user){
-
-        Map<String, Object> claims = new HashMap<>();
-
-        claims.put("userId", user.getId());
-
-        return Jwts.builder()
-                .setClaims(claims)
-                .setSubject(user.getEmail())
-                .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + jwtRefreshExpiration)) // 7 días
-                .signWith(key)
-                .compact();
-    }
-
-    // Extraer institutionId (tenant) del token
     public Long extractInstitutionId(String token) {
-        Object institutionId = extractAllClaims(token).get("institutionId");
-        return institutionId != null ? Long.valueOf(institutionId.toString()) : null;
+        Object value = extractAllClaims(token)
+                .get(CLAIM_INSTITUTION_ID);
+
+        return value != null
+                ? Long.valueOf(value.toString())
+                : null;
     }
-
-    // Obtener token desde header Authorization: Bearer xxx
-    public String resolveToken(jakarta.servlet.http.HttpServletRequest request) {
-        final String authHeader = request.getHeader("Authorization");
-
-        if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            return authHeader.substring(7);
-        }
-        return null;
-    }
-
 }
-

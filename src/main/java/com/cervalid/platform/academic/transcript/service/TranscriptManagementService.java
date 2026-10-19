@@ -130,14 +130,33 @@ public class TranscriptManagementService {
         return saved;
     }
 
-    // FINALIZAR TRANSCRIPT
+    // FINALIZAR TRANSCRIPT DESDE UNA SESIÓN AUTENTICADA
     public void finalizeTranscript(
             UUID transcriptPublicId) {
 
         Transcript transcript =
+                queryService.getByPublicId(transcriptPublicId);
+
+        finalizeTranscriptEntity(transcript);
+    }
+
+    // FINALIZAR TRANSCRIPT DESDE UN PROCESO INTERNO
+    public void finalizeTranscript(
+            UUID transcriptPublicId,
+            Long institutionId) {
+
+        Transcript transcript =
                 queryService.getByPublicId(
-                        transcriptPublicId
+                        transcriptPublicId,
+                        institutionId
                 );
+
+        finalizeTranscriptEntity(transcript);
+    }
+
+    // LÓGICA COMPARTIDA DE FINALIZACIÓN
+    public void finalizeTranscriptEntity(
+            Transcript transcript) {
 
         Student student =
                 studentQueryService.getById(

@@ -5,6 +5,10 @@ spring:
       ddl-auto: update
     show-sql: false
 
+cervalid:
+  demo:
+    enabled: ${CERVALID_DEMO_ENABLED:true}
+
 logging:
   level:
     root: INFO

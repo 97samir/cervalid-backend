@@ -4,6 +4,7 @@ import com.cervalid.platform.institution.entity.Institution;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface InstitutionRepository
         extends JpaRepository<Institution, Long> {
@@ -13,6 +14,7 @@ public interface InstitutionRepository
     // para dashboard stats de superadmin
     long countByActiveTrue();
 
-    //List<Institution> findByInactive(Boolean inactive);
-    //List<Institution> findByAll(Boolean active);
+    boolean existsByRuc(String ruc);
+
+    Optional<Institution> findByRuc(String ruc);
 }

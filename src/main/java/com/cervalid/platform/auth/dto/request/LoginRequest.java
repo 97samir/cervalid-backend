@@ -1,4 +1,4 @@
-package com.cervalid.platform.auth.dto;
+package com.cervalid.platform.auth.dto.request;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;

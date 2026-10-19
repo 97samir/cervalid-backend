@@ -5,6 +5,9 @@ import com.cervalid.platform.security.permissions.Role;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.LocalDateTime;
+import java.util.UUID;
+
 @Entity
 @Getter
 @Setter
@@ -17,6 +20,9 @@ public class InstitutionUser {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Column(nullable = false, unique = true)
+    private UUID publicId;
 
     @ManyToOne
     @JoinColumn(name="user_id")
@@ -32,4 +38,12 @@ public class InstitutionUser {
 
     @Column(nullable = false)
     private boolean active = true;
+
+    @PrePersist
+    public void prePersist() {
+
+        if (publicId == null) {
+            publicId = UUID.randomUUID();
+        }
+    }
 }

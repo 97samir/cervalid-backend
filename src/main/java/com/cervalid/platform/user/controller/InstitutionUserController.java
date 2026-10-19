@@ -1,6 +1,6 @@
 package com.cervalid.platform.user.controller;
 
-import com.cervalid.platform.user.dto.ChangeStatusRequest;
+import com.cervalid.platform.user.dto.request.ChangeStatusRequest;
 import com.cervalid.platform.user.service.InstitutionUserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;

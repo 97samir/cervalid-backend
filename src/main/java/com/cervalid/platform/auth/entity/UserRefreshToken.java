@@ -21,7 +21,7 @@ public class UserRefreshToken {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 1000)
     private String token;
 
     @ManyToOne(fetch = FetchType.LAZY)

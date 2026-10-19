@@ -6,7 +6,6 @@ import com.cervalid.platform.academic.profile.dto.internal.CreateAcademicProfile
 import com.cervalid.platform.academic.profile.dto.request.AcademicProfileRequest;
 import com.cervalid.platform.academic.profile.dto.response.AcademicProfileResponse;
 import com.cervalid.platform.academic.profile.dto.request.UpdateAcademicProfileRequest;
-import com.cervalid.platform.academic.profile.repository.AcademicProfileRepository;
 import com.cervalid.platform.academic.student.entity.Student;
 import com.cervalid.platform.academic.student.service.StudentQueryService;
 import com.cervalid.platform.security.context.SecurityContextService;
@@ -22,7 +21,6 @@ import java.util.UUID;
 @Transactional
 public class AcademicProfileService {
 
-    private final AcademicProfileRepository repository;
     private final StudentQueryService studentQueryService;
     private final SecurityContextService securityContextService;
     private final AcademicProfileDetailQueryService detailQueryService;

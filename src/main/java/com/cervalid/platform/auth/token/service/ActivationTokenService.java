@@ -101,10 +101,15 @@ public class ActivationTokenService {
     }
 
     public boolean hasActiveToken(
-            Long userId, Long institutionId) {
+            Long userId,
+            Long institutionId) {
+
         return tokenRepository
-                .existsByUser_IdAndInstitution_IdAndUsedFalse(
-                        userId, institutionId);
+                .existsByUser_IdAndInstitution_IdAndUsedFalseAndExpiresAtAfter(
+                        userId,
+                        institutionId,
+                        LocalDateTime.now()
+                );
     }
 
     public ActivationToken validateToken(String tokenValue) {
@@ -118,7 +123,7 @@ public class ActivationTokenService {
             throw new RuntimeException("Token already used");
         }
 
-        if (token.getExpiresAt().isBefore(LocalDateTime.now())) {
+        if (!token.getExpiresAt().isAfter(LocalDateTime.now())) {
             throw new RuntimeException("Token expired");
         }
 

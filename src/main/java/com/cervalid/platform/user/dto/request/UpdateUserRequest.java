@@ -1,4 +1,4 @@
-package com.cervalid.platform.user.dto;
+package com.cervalid.platform.user.dto.request;
 
 import lombok.Data;
 import lombok.Getter;

@@ -1,4 +1,4 @@
-package com.cervalid.platform.user.dto;
+package com.cervalid.platform.user.dto.request;
 
 import com.cervalid.platform.common.enums.RoleName;
 import lombok.*;

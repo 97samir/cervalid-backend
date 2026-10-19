@@ -6,9 +6,16 @@ import com.cervalid.platform.security.context.UserContext;
 import com.cervalid.platform.security.permissions.Role;
 import com.cervalid.platform.security.permissions.repository.RoleRepository;
 import com.cervalid.platform.institution.entity.Institution;
-import com.cervalid.platform.user.dto.*;
+import com.cervalid.platform.user.dto.filter.UserFilterRequest;
+import com.cervalid.platform.user.dto.request.CreateUserRequest;
+import com.cervalid.platform.user.dto.request.LinkInstitutionRequest;
+import com.cervalid.platform.user.dto.request.UpdateUserRequest;
+import com.cervalid.platform.user.dto.request.UpdateUserRoleRequest;
+import com.cervalid.platform.user.dto.response.UserResponse;
 import com.cervalid.platform.user.entity.InstitutionUser;
 import com.cervalid.platform.user.entity.User;
+import com.cervalid.platform.user.mapper.InstitutionUserMapper;
+import com.cervalid.platform.user.mapper.UserMapper;
 import com.cervalid.platform.user.repository.InstitutionUserRepository;
 import com.cervalid.platform.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -34,8 +41,12 @@ public class UserService {
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
 
+    private final UserMapper userMapper;
+    private final InstitutionUserMapper institutionUserMapper;
+
     // Obtener un usuario
-    public User getUser(Long userId) {
+    public UserResponse getUser(
+            Long userId) {
 
         RoleName currentRole = UserContext.getRole();
         Long currentInstitutionId = UserContext.getInstitutionId();
@@ -44,7 +55,7 @@ public class UserService {
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
         if (currentRole == RoleName.SUPER_ADMIN) {
-            return user;
+            return userMapper.toResponse(user);
         }
 
         if (currentInstitutionId == null) {
@@ -56,12 +67,13 @@ public class UserService {
                 .orElseThrow(() ->
                         new RuntimeException("Usuario no pertenece a tu institución"));
 
-        return user;
+        return userMapper.toResponse(user);
     }
 
     //Crear usuario
     @Transactional
-    public User createUser(CreateUserRequest request) {
+    public UserResponse createUser(
+            CreateUserRequest request) {
 
         RoleName currentRole = UserContext.getRole();
         Long currentInstitutionId = UserContext.getInstitutionId();
@@ -121,18 +133,12 @@ public class UserService {
             );
         }
 
-        User user = new User();
+        // Crear usuario a partir del request
+        User user = userMapper.toEntity(request);
 
-        user.setName(request.getName());
-        user.setLastName(request.getLastName());
-        user.setEmail(request.getEmail().trim());
-        user.setDocumentType(request.getDocumentType());
-        user.setDocument(request.getDocument());
-        user.setPhone(request.getPhone());
         user.setActive(false);
         user.setPassword(passwordEncoder.encode(
-                UUID.randomUUID().toString())
-        );
+                UUID.randomUUID().toString()));
 
         user = userRepository.save(user);
 
@@ -143,13 +149,14 @@ public class UserService {
         relation.setRole(role);
         relation.setActive(false);
 
-        institutionUserRepository.save(relation);
+        relation = institutionUserRepository.save(relation);
 
-        return user;
+        return institutionUserMapper.toUserResponse(relation);
     }
 
     // activar usuario existente en la plataforma
-    public void linkInstitution(LinkInstitutionRequest request) {
+    public void linkInstitution(
+            LinkInstitutionRequest request) {
 
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
@@ -184,7 +191,8 @@ public class UserService {
     }
 
     // eliminar usuario
-    public void deleteUser(Long userIdToDelete) {
+    public void deleteUser(
+            Long userIdToDelete) {
 
         try {
 
@@ -193,8 +201,6 @@ public class UserService {
 
             User user = userRepository.findById(userIdToDelete)
                     .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
-
-            Long targetInstitutionId;
 
             if (currentRole == RoleName.SUPER_ADMIN) {
 
@@ -213,7 +219,6 @@ public class UserService {
 
                 institutionUserRepository.deleteAll(relations);
                 userRepository.delete(user);
-                return;
 
             } else {
 
@@ -221,11 +226,11 @@ public class UserService {
                     throw new RuntimeException("Usuario sin institución");
                 }
 
-                targetInstitutionId = currentInstitutionId;
-
                 InstitutionUser relation =
                         institutionUserRepository
-                                .findByUserIdAndInstitutionId(userIdToDelete, targetInstitutionId)
+                                .findByUserIdAndInstitutionId(
+                                        userIdToDelete,
+                                        currentInstitutionId)
                                 .orElseThrow(() ->
                                         new RuntimeException("No pertenece a tu institución"));
 
@@ -237,12 +242,17 @@ public class UserService {
             }
 
         } catch (Exception e) {
-            throw new RuntimeException("Error eliminando usuario: " + e.getMessage());
+            throw new RuntimeException(
+                    "Error eliminando usuario: " + e.getMessage(),
+                    e
+            );
         }
     }
 
     // CAMBIAR ROL DE USUARIO PATCH /users/{id}/role
-    public void updateUserRole(Long userId, UpdateUserRoleRequest request) {
+    public void updateUserRole(
+            Long userId,
+            UpdateUserRoleRequest request) {
 
         RoleName currentRole = UserContext.getRole();
         Long currentInstitutionId = UserContext.getInstitutionId();
@@ -297,7 +307,9 @@ public class UserService {
     }
 
     // cambiar datos comunes con PATCH /users/{id}
-    public User updateUser(Long userId, UpdateUserRequest request) {
+    public UserResponse updateUser(
+            Long userId,
+            UpdateUserRequest request) {
 
         try {
 
@@ -342,33 +354,16 @@ public class UserService {
                 throw new RuntimeException("No puedes modificar a otro administrador");
             }
 
-            if (request.getName() != null) {
-                user.setName(request.getName());
-            }
-
-            if (request.getLastName() != null) {
-                user.setLastName(request.getLastName());
-            }
-
-            if (request.getEmail() != null) {
-                user.setEmail(request.getEmail());
-            }
-            /*
-            if (request.getDocument() != null) {
-                user.setDocument(request.getDocument());
-            }
-            */
-            if (request.getPhone() != null) {
-                user.setPhone(request.getPhone());
-            }
+            // mapper para actualizar
+            userMapper.updateEntity(user, request);
 
             if (request.getActive() != null) {
                 user.setActive(request.getActive());
             }
 
-            userRepository.save(user);
+            user = userRepository.save(user);
 
-            return user;
+            return userMapper.toResponse(user);
 
         } catch (Exception e) {
             throw new RuntimeException("Error actualizando usuario: " + e.getMessage());
@@ -376,7 +371,9 @@ public class UserService {
     }
 
     // metodo page para listar usuarios
-    public Page<UserResponse> listUsers(UserFilterRequest filter, Pageable pageable) {
+    public Page<UserResponse> listUsers(
+            UserFilterRequest filter,
+            Pageable pageable) {
 
         try {
 
@@ -467,7 +464,8 @@ public class UserService {
                 }
             }
 
-            return relations.map(this::mapToUserResponse);
+            return relations.map(
+                    institutionUserMapper::toUserResponse);
 
         } catch (Exception e) {
 
@@ -479,7 +477,9 @@ public class UserService {
     }
 
     // metodo para listar usuario de una institución en especifico
-    public Page<UserResponse> listUsersByInstitution(UserFilterRequest filter, Pageable pageable) {
+    public Page<UserResponse> listUsersByInstitution(
+            UserFilterRequest filter,
+            Pageable pageable) {
 
         Long institutionId = UserContext.getInstitutionId();
 
@@ -526,11 +526,14 @@ public class UserService {
                     );
         }
 
-        return relations.map(this::mapToUserResponse);
+        return relations.map(
+                institutionUserMapper::toUserResponse);
     }
 
     // listar usuarios para el frontend superadmin
-    public Page<UserResponse> listAllUsers(UserFilterRequest filter, Pageable pageable) {
+    public Page<UserResponse> listAllUsers(
+            UserFilterRequest filter,
+            Pageable pageable) {
 
         Page<InstitutionUser> relations;
 
@@ -612,27 +615,7 @@ public class UserService {
             }
         }
 
-        return relations.map(this::mapToUserResponse);
+        return relations.map(institutionUserMapper::toUserResponse);
     }
 
-    // metodo reutilizable
-    private UserResponse mapToUserResponse(InstitutionUser relation) {
-
-        User user = relation.getUser();
-
-        return UserResponse.builder()
-                .id(user.getId())
-                .institutionUserId(relation.getId()) // agregado
-                .name(user.getName())
-                .lastName(user.getLastName())
-                .email(user.getEmail())
-                .documentType(user.getDocumentType())
-                .document(user.getDocument())
-                .phone(user.getPhone())
-                .active(relation.isActive())
-                //.active(user.isActive())
-                .role(relation.getRole().getName())
-                .institutionId(relation.getInstitution().getId())
-                .build();
-    }
 }

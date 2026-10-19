@@ -8,6 +8,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -70,5 +71,10 @@ public interface CredentialRepository
 
     long countByInstitutionIdAndDeletedFalse(
             Long institutionId);
+
+    // para busqueda en datos demo
+    List<Credential> findAllByInstitutionIdAndDeletedFalse(
+            Long institutionId
+    );
 
 }

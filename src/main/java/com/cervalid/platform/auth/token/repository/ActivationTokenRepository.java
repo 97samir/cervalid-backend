@@ -3,6 +3,7 @@ package com.cervalid.platform.auth.token.repository;
 import com.cervalid.platform.auth.token.entity.ActivationToken;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -25,6 +26,14 @@ public interface ActivationTokenRepository extends JpaRepository<ActivationToken
     boolean existsByUser_IdAndInstitution_IdAndUsedFalse(
             Long userId,
             Long institutionId
+    );
+
+    // para demo datos
+
+    boolean existsByUser_IdAndInstitution_IdAndUsedFalseAndExpiresAtAfter(
+            Long userId,
+            Long institutionId,
+            LocalDateTime now
     );
 
 }
