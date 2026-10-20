@@ -22,8 +22,4 @@ public class CanonicalHashService {
         }
     }
 
-    // FUNCIÓN CLAVE BLOCKCHAIN READY
-    /*public String canonicalHash(Map<String, Object> payload, HashService hashService) {
-        return hashService.hashString(canonicalize(payload));
-    }*/
 }
