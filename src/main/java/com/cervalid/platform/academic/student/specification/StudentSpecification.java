@@ -15,12 +15,21 @@ import java.util.List;
 public class StudentSpecification {
 
     public static Specification<Student> build(
-            StudentFilterRequest filter) {
+            StudentFilterRequest filter,
+            Long institutionId) {
 
         return (root, query, cb) -> {
 
             List<Predicate> predicates =
                     new ArrayList<>();
+
+            // Restricción obligatoria por institución
+            predicates.add(
+                    cb.equal(
+                            root.get("institutionId"),
+                            institutionId
+                    )
+            );
 
             predicates.add(
                     cb.isFalse(root.get("deleted"))

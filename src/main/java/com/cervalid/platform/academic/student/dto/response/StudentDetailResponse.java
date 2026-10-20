@@ -17,16 +17,11 @@ public class StudentDetailResponse {
 
     private UUID publicId;
 
-    //private Long userId;
-    //private Long institutionId;
-    //private Long institutionMembershipId;
-
     private String studentCode;
     private String status;
 
     private LocalDate admissionDate;
     private LocalDate graduationDate;
-    //private Boolean deleted;
 
     private AcademicProfileResponse profile;
 
